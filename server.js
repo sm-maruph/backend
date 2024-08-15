@@ -8,7 +8,8 @@ const app = express();
 // Middleware
 app.use(cors()); // Enable CORS
 app.use(express.json()); // Parse JSON bodies
-app.use(bodyParser.urlencoded({ extended: true })); // Parse URL-encoded bodies
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use("/uploads", express.static("uploads")); // Parse URL-encoded bodies
 
 // Routes
 app.use("/auth", authRoute);
