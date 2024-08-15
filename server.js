@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const authRoute = require("./routes/authRoutes.js");
+const { customError } = require("./middlewares/errorMiddleware.js");
 
 const app = express();
 
@@ -16,6 +17,8 @@ app.use("/auth", authRoute);
 
 // Start the server
 const PORT = 3000;
+
+app.use(customError);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
