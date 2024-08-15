@@ -33,8 +33,15 @@ const login = async (req, res, next) => {
     console.log(checkPass);
 
     if (checkPass) {
-      // Passwords match, return success
-      return res.status(200).json({ message: "Login successful" });
+      res.status(200).json({
+        user: {
+          id: results[0].id,
+          email: results[0].email,
+          firstName: results[0].first_name,
+          lastName: results[0].last_name,
+          profilePicture: results[0].profile_picture,
+        },
+      });
     } else {
       // Passwords don't match, return a 401 error
       throw new myError(
@@ -44,7 +51,7 @@ const login = async (req, res, next) => {
     }
   } catch (error) {
     next(error);
-    console.log(error.message);
+    console.log(error);
   }
 };
 
@@ -84,7 +91,9 @@ const signup = async (req, res, next) => {
     );
 
     // fields contains extra meta data about results, if available
-    res.send({ message: "Mission Success" }).status(200);
+    res
+      .send({ user: { id, email, firstName, lastName, profilePicture: path } })
+      .status(200);
   } catch (err) {
     console.log(err);
     next(err);
