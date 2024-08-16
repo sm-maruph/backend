@@ -2,20 +2,40 @@ const mysql = require("mysql2/promise");
 const { v4: uuidv4 } = require("uuid");
 const bcrypt = require("bcrypt");
 const path = require("path");
+const { validationResult } = require("express-validator");
 
 const { myError } = require("../middlewares/errorMiddleware");
 const JWT_SECRET = "elDradoX";
 
 const login = async (req, res, next) => {
-  const connection = await mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    database: "project",
-  });
-  const { email, password } = req.body;
-  console.log(email, password);
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    var message = errors
+      .array()
+      .map((err) => {
+        return err.msg;
+      })
+      .join(",");
+
+    const error = new myError(message, 201);
+    return next(error);
+  }
+  let connection;
+  try {
+    connection = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      database: "project",
+    });
+  } catch (err) {
+    const error = new myError("Xammp Server Error", 500);
+    return next(error);
+  }
 
   try {
+    const { email, password } = req.body;
+    console.log(email, password);
+
     const [results, fields] = await connection.query(
       `SELECT * FROM user WHERE email = ?`,
       [email]
@@ -44,23 +64,44 @@ const login = async (req, res, next) => {
       });
     } else {
       // Passwords don't match, return a 401 error
-      throw new myError(
+      const error = new myError(
         "Unable to authenticate. Please check your credentials and try again.",
         401
       );
+      return next(error);
     }
   } catch (error) {
-    next(error);
     console.log(error);
+    return next(error);
   }
 };
 
 const signup = async (req, res, next) => {
-  const connection = await mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    database: "project",
-  });
+  console.log(req.body);
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    console.log(errors);
+    var message = errors
+      .array()
+      .map((err) => {
+        return err.msg;
+      })
+      .join(" & ");
+
+    const error = new myError(message, 201);
+    return next(error);
+  }
+  let connection;
+  try {
+    connection = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      database: "project",
+    });
+  } catch (err) {
+    const error = new myError("Xammp Server Error", 500);
+    return next(error);
+  }
 
   const { firstName, lastName, email, password, gender, userType } = req.body;
   let path;
@@ -75,10 +116,11 @@ const signup = async (req, res, next) => {
       email,
     ]);
     if (results.length !== 0) {
-      throw new myError(
+      const error = new myError(
         "A user with this email  already exists in our system.",
         409
       );
+      return next(error);
     }
 
     const salt = await bcrypt.genSalt(10);
