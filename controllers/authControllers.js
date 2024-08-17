@@ -60,6 +60,7 @@ const login = async (req, res, next) => {
           firstName: results[0].first_name,
           lastName: results[0].last_name,
           profilePicture: results[0].profile_picture,
+          role: results[0].user_type,
         },
       });
     } else {
@@ -75,6 +76,8 @@ const login = async (req, res, next) => {
     return next(error);
   }
 };
+
+/////Sign up Functionn...
 
 const signup = async (req, res, next) => {
   console.log(req.body);
@@ -134,7 +137,16 @@ const signup = async (req, res, next) => {
 
     // fields contains extra meta data about results, if available
     res
-      .send({ user: { id, email, firstName, lastName, profilePicture: path } })
+      .send({
+        user: {
+          id,
+          email,
+          firstName,
+          lastName,
+          profilePicture: path,
+          role: userType,
+        },
+      })
       .status(200);
   } catch (err) {
     console.log(err);
