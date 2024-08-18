@@ -3,8 +3,9 @@ const { v4: uuidv4 } = require("uuid");
 const bcrypt = require("bcrypt");
 const path = require("path");
 const { validationResult } = require("express-validator");
-
 const { myError } = require("../middlewares/errorMiddleware");
+
+const jwt = require("jsonwebtoken");
 const JWT_SECRET = "elDradoX";
 
 const login = async (req, res, next) => {
@@ -53,8 +54,8 @@ const login = async (req, res, next) => {
     console.log(checkPass);
 
     if (checkPass) {
-      res.status(200).json({
-        user: {
+      const token = jwt.sign(
+        {
           id: results[0].id,
           email: results[0].email,
           firstName: results[0].first_name,
@@ -62,7 +63,10 @@ const login = async (req, res, next) => {
           profilePicture: results[0].profile_picture,
           role: results[0].user_type,
         },
-      });
+        JWT_SECRET,
+        { expiresIn: "1h" }
+      );
+      res.status(200).json({ token });
     } else {
       // Passwords don't match, return a 401 error
       const error = new myError(
@@ -136,16 +140,22 @@ const signup = async (req, res, next) => {
     );
 
     // fields contains extra meta data about results, if available
+
+    const token = jwt.sign(
+      {
+        id,
+        email,
+        firstName,
+        lastName,
+        profilePicture: path,
+        role: userType,
+      },
+      JWT_SECRET,
+      { expiresIn: "1h" }
+    );
     res
       .send({
-        user: {
-          id,
-          email,
-          firstName,
-          lastName,
-          profilePicture: path,
-          role: userType,
-        },
+        token,
       })
       .status(200);
   } catch (err) {
