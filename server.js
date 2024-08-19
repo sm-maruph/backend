@@ -2,7 +2,9 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const authRoute = require("./routes/authRoutes.js");
+const feedRoute = require("./routes/feedRoute.js");
 const { customError } = require("./middlewares/errorMiddleware.js");
+const verifyToken = require("./middlewares/authorization.js");
 
 const app = express();
 
@@ -10,10 +12,13 @@ const app = express();
 app.use(cors()); // Enable CORS
 app.use(express.json()); // Parse JSON bodies
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use("/uploads", express.static("uploads")); // Parse URL-encoded bodies
+app.use("/uploads", express.static("uploads"));
+app.use("/feed", express.static("feed")); // Parse URL-encoded bodies
 
 // Routes
 app.use("/auth", authRoute);
+
+app.use("/feed", verifyToken, feedRoute);
 
 // Start the server
 const PORT = 3000;

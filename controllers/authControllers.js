@@ -95,7 +95,7 @@ const signup = async (req, res, next) => {
       })
       .join(" & ");
 
-    const error = new myError(message, 201);
+    const error = new myError(message, 401);
     return next(error);
   }
   let connection;
