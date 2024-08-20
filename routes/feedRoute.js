@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { feedPost } = require("../controllers/feedControllers");
+const { feedPost, getPosts } = require("../controllers/feedControllers");
 const multer = require("multer");
 
 const storage = multer.diskStorage({
@@ -17,5 +17,6 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 router.post("/post", upload.array("files", 10), feedPost);
+router.get("/getposts", getPosts);
 
 module.exports = router;

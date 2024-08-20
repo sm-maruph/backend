@@ -111,13 +111,14 @@ const signup = async (req, res, next) => {
   }
 
   const { firstName, lastName, email, password, gender, userType } = req.body;
+
   let path;
   if (!req.file) {
     path = `uploads/No_Profile.jpg`;
   } else {
-    path = req.file.path;
+    path = req.file.path.replace(/\\/g, "\\\\");
   }
-
+  console.log(path);
   try {
     let [results] = await connection.query(`SELECT * FROM USER WHERE email=?`, [
       email,
