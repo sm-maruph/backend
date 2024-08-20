@@ -34,4 +34,27 @@ const feedPost = async (req, res, next) => {
   res.status(201).send({ message: "Post successfull" });
 };
 
-module.exports = { feedPost };
+const getPosts = async (req, res, next) => {
+  let connection;
+  try {
+    connection = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      database: "project",
+    });
+  } catch (err) {
+    return next(new myError("Xammp Server Error", 500));
+  }
+
+  try {
+    let [results, field] = await connection.query(
+      `SELECT sfp.id,sfp.uid,sfp.content,sfp.image_url,sfp.created_at,sfp.title,u.profile_picture,u.first_name,u.last_name
+FROM student_feed_post as sfp 
+JOIN user as u ON sfp.uid = u.id;`
+    );
+    return res.json({ posts: results }).status(200);
+  } catch (error) {
+    return next(new myError(error.message, 500));
+  }
+};
+module.exports = { feedPost, getPosts };
