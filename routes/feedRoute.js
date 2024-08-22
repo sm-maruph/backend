@@ -1,6 +1,11 @@
 const express = require("express");
 const router = express.Router();
-const { feedPost, getPosts } = require("../controllers/feedControllers");
+const {
+  feedPost,
+  getPosts,
+  feedLikes,
+  getLikes,
+} = require("../controllers/feedControllers");
 const multer = require("multer");
 
 const storage = multer.diskStorage({
@@ -17,6 +22,8 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 router.post("/post", upload.array("files", 10), feedPost);
+router.post("/like", feedLikes);
 router.get("/getposts", getPosts);
+router.get("/getLikes/:postId", getLikes);
 
 module.exports = router;
