@@ -2,20 +2,6 @@ const { v4: uuidv4 } = require("uuid");
 const mysql = require("mysql2/promise");
 const { myError } = require("../middlewares/errorMiddleware");
 
-const mysqlConnection = async (next) => {
-  let connection;
-  try {
-    connection = await mysql.createConnection({
-      host: "localhost",
-      user: "root",
-      database: "project",
-    });
-  } catch (err) {
-    return next(new myError("Xammp Server Error", 500));
-  }
-  return connection;
-};
-
 const feedPost = async (req, res, next) => {
   const { title, description } = req.body;
   const uid = req.user.id;
@@ -27,7 +13,16 @@ const feedPost = async (req, res, next) => {
     imagesUrl = JSON.stringify(jsonObject);
   }
 
-  const connection = await mysqlConnection(next);
+  let connection;
+  try {
+    connection = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      database: "project",
+    });
+  } catch (err) {
+    return next(new myError("Xammp Server Error", 500));
+  }
 
   const id = uuidv4();
   try {
@@ -108,22 +103,38 @@ const feedLikes = async (req, res, next) => {
 
 const getLikes = async (req, res, next) => {
   const postId = req.params.postId;
+  const userId = req.user.id;
+  console.log(userId);
 
-  const connection = await mysqlConnection();
+  let connection;
+  try {
+    connection = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      database: "project",
+    });
+  } catch (err) {
+    return next(new myError("Xammp Server Error", 500));
+  }
 
   try {
     const [likes] = await connection.query(
-      "SELECT COUNT(*) AS COUNT FROM student_feed_post_likes where pid = ? AND is_liked = true",
+      "SELECT COUNT(*) AS COUNT FROM student_feed_post_likes where pid = ? AND is_liked = 'like'",
       [postId]
     );
     const [disLikes] = await connection.query(
-      "SELECT COUNT(*) AS COUNT FROM student_feed_post_likes where pid = ? AND is_liked = false",
+      "SELECT COUNT(*) AS COUNT FROM student_feed_post_likes where pid = ? AND is_liked = 'dislike'",
       [postId]
     );
+    const [UR] = await connection.query(
+      `SELECT id, uid, pid, created_at, is_liked FROM student_feed_post_likes WHERE pid = '${postId}' AND uid = '${userId}'`
+    );
+    console.log(UR);
 
     res.status(200).json({
       likes: likes[0].COUNT,
       disLikes: disLikes[0].COUNT,
+      userReaction: UR[0].is_liked,
     });
   } catch (error) {
     return next(new myError(error.message, 500));
