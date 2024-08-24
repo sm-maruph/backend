@@ -130,12 +130,19 @@ const getLikes = async (req, res, next) => {
       `SELECT id, uid, pid, created_at, is_liked FROM student_feed_post_likes WHERE pid = '${postId}' AND uid = '${userId}'`
     );
     console.log(UR);
-
-    res.status(200).json({
-      likes: likes[0].COUNT,
-      disLikes: disLikes[0].COUNT,
-      userReaction: UR[0].is_liked,
-    });
+    if (UR.length !== 0) {
+      return res.status(200).json({
+        likes: likes[0].COUNT,
+        disLikes: disLikes[0].COUNT,
+        userReaction: UR[0].is_liked,
+      });
+    } else {
+      return res.status(200).json({
+        likes: likes[0].COUNT,
+        disLikes: disLikes[0].COUNT,
+        userReaction: null,
+      });
+    }
   } catch (error) {
     return next(new myError(error.message, 500));
   }
