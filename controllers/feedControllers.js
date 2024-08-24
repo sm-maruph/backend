@@ -147,4 +147,8 @@ const getLikes = async (req, res, next) => {
     return next(new myError(error.message, 500));
   }
 };
-module.exports = { feedPost, getPosts, feedLikes, getLikes };
+const feedComment = (req, res, next) => {
+  res.status(200).send({ Message: "hello" });
+};
+
+module.exports = { feedPost, getPosts, feedLikes, getLikes, feedComment };
