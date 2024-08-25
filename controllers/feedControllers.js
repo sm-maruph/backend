@@ -147,8 +147,40 @@ const getLikes = async (req, res, next) => {
     return next(new myError(error.message, 500));
   }
 };
-const feedComment = (req, res, next) => {
-  res.status(200).send({ Message: "hello" });
+const feedComment = async (req, res, next) => {
+  // All variables checked
+  // console.log(req.file);
+  // console.log(req.body);
+  // console.log("okay");
+  const postId = req.params.postId;
+  const userId = req.user.id;
+  const content = req.body.content;
+  let path;
+  if (req.file) {
+    path = req.file.path.replace(/\\/g, "\\\\");
+  } else {
+    path = "";
+  }
+  let connection;
+  try {
+    connection = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      database: "project",
+    });
+  } catch (error) {
+    return next(new myError("xammp Error", 500));
+  }
+  var id = uuidv4();
+  try {
+    connection.query(
+      "INSERT INTO `student_feed_post_comments`(`id`, `pid`, `uid`,  `content`, `image_url`) VALUES (?,?,?,?,?)",
+      [id, postId, userId, content, path]
+    );
+    res.status(200).send({ message: "Mission successfull" });
+  } catch (error) {
+    console.log(error.message);
+  }
 };
 
 module.exports = { feedPost, getPosts, feedLikes, getLikes, feedComment };

@@ -24,7 +24,7 @@ const upload = multer({ storage: storage });
 
 router.post("/post", upload.array("files", 10), feedPost);
 router.post("/like", feedLikes);
-router.post("/comment/:postId", feedComment);
+router.post("/comment/:postId", upload.single("image"), feedComment);
 router.get("/getposts", getPosts);
 router.get("/getLikes/:postId", getLikes);
 
