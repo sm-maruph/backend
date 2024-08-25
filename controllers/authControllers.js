@@ -106,7 +106,7 @@ const signup = async (req, res, next) => {
       database: "project",
     });
   } catch (err) {
-    const error = new myError("Xammp Server Error", 500);
+    const error = new myError(err.message, 500);
     return next(error);
   }
 
