@@ -6,6 +6,9 @@ const {
   feedLikes,
   getLikes,
   feedComment,
+  getComments,
+  commentLikes,
+  getCommentLikes,
 } = require("../controllers/feedControllers");
 const multer = require("multer");
 
@@ -25,7 +28,10 @@ const upload = multer({ storage: storage });
 router.post("/post", upload.array("files", 10), feedPost);
 router.post("/like", feedLikes);
 router.post("/comment/:postId", upload.single("image"), feedComment);
+router.post("/commentlikes/:commentId", commentLikes);
 router.get("/getposts", getPosts);
 router.get("/getLikes/:postId", getLikes);
+router.get("/getcomments/:postId", getComments);
+router.get("/getcommentlikes/:commentId", getCommentLikes);
 
 module.exports = router;

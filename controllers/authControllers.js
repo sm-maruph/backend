@@ -51,7 +51,6 @@ const login = async (req, res, next) => {
     }
 
     const checkPass = await bcrypt.compare(password, results[0].password);
-    console.log(checkPass);
 
     if (checkPass) {
       const token = jwt.sign(
@@ -118,7 +117,7 @@ const signup = async (req, res, next) => {
   } else {
     path = req.file.path.replace(/\\/g, "\\\\");
   }
-  console.log(path);
+
   try {
     let [results] = await connection.query(`SELECT * FROM USER WHERE email=?`, [
       email,
