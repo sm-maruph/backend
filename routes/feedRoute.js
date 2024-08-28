@@ -9,6 +9,10 @@ const {
   getComments,
   commentLikes,
   getCommentLikes,
+  deletePost,
+  editPost,
+  updatePost,
+  deleteComment,
 } = require("../controllers/feedControllers");
 const multer = require("multer");
 
@@ -25,7 +29,12 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
+//post
 router.post("/post", upload.array("files", 10), feedPost);
+//edit a individual Post
+router.put("/update/:postId", updatePost);
+router.get("/edit/:postId", editPost);
+
 router.post("/like", feedLikes);
 router.post("/comment/:postId", upload.single("image"), feedComment);
 router.post("/commentlikes/:commentId", commentLikes);
@@ -34,4 +43,8 @@ router.get("/getLikes/:postId", getLikes);
 router.get("/getcomments/:postId", getComments);
 router.get("/getcommentlikes/:commentId", getCommentLikes);
 
+// Delteing
+
+router.delete("/deletepost/:postId", deletePost);
+router.delete("/deletecomment/:commentId", deleteComment);
 module.exports = router;
