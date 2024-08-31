@@ -43,7 +43,7 @@ const feedPost = async (req, res, next) => {
     return next(new myError(error.message, 500));
   }
 
-  res.status(201).send({ message: "Post successfull" });
+  res.status(200).send({ message: "Post successfull" });
 };
 
 const getPosts = async (req, res, next) => {
@@ -62,7 +62,7 @@ const getPosts = async (req, res, next) => {
     let [results, field] = await connection.query(
       `SELECT sfp.id,sfp.uid,sfp.content,sfp.image_url,sfp.created_at,sfp.title,u.profile_picture,u.first_name,u.last_name
 FROM student_feed_post as sfp 
-JOIN user as u ON sfp.uid = u.id;`
+JOIN user as u ON sfp.uid = u.id order by created_at DESC;`
     );
     connection.end();
     const updated = results.map((item) => {
