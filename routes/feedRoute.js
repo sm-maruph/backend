@@ -36,7 +36,7 @@ router.put("/update/:postId", updatePost);
 router.get("/edit/:postId", editPost);
 
 router.post("/like", feedLikes);
-router.post("/comment/:postId", upload.single("image"), feedComment);
+router.post("/comment/:postId", upload.array("files", 10), feedComment);
 router.post("/commentlikes/:commentId", commentLikes);
 router.get("/getposts", getPosts);
 router.get("/getLikes/:postId", getLikes);
