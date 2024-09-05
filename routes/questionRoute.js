@@ -25,6 +25,6 @@ const upload = multer({ storage: storage });
 router.post("/post", upload.single("pdf"), postQuestion);
 router.get("/getpdf", getPdf);
 router.post("/filteredQuestions", getFilteredQuestions);
-router.delete("/delete/:qID", deleteQuestion);
+router.post("/delete", deleteQuestion);
 
 module.exports = router;

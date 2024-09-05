@@ -1,5 +1,6 @@
 const mysql = require("mysql2/promise");
 const { myError } = require("../middlewares/errorMiddleware");
+const fs = require("fs");
 
 const postQuestion = async (req, res, next) => {
   const { department, courseName, courseCode, trimester, examType, year } =
@@ -55,7 +56,9 @@ const getPdf = async (req, res, next) => {
   }
 
   try {
-    const [rows] = await connection.query("SELECT q.*, u.profile_picture FROM question q JOIN user u ON q.uid = u.id");
+    const [rows] = await connection.query(
+      "SELECT q.*, u.profile_picture FROM question q JOIN user u ON q.uid = u.id"
+    );
     connection.end();
 
     return res.status(200).json(rows);
@@ -69,7 +72,8 @@ const getFilteredQuestions = async (req, res, next) => {
   let connection;
 
   // Initialize query components
-  let baseQuery = "SELECT q.*, u.profile_picture FROM question q JOIN user u ON q.uid = u.id WHERE ";
+  let baseQuery =
+    "SELECT q.*, u.profile_picture FROM question q JOIN user u ON q.uid = u.id WHERE ";
   let conditions = [];
   let queryParams = [];
 
@@ -132,7 +136,10 @@ const getFilteredQuestions = async (req, res, next) => {
 };
 
 const deleteQuestion = async (req, res, next) => {
-  const qID = req.params.qID;
+  const { qID, pdfPath } = req.body;
+  console.log('Received for deletion:', qID, pdfPath);
+
+  // Establish database connection
   let connection;
   try {
     connection = await mysql.createConnection({
@@ -141,16 +148,30 @@ const deleteQuestion = async (req, res, next) => {
       database: "project",
     });
   } catch (err) {
-    return next(new myError("Xammp Server Error", 500));
+    console.error("Database Connection Error:", err.message);
+    return next(new myError("XAMPP Server Error", 500));
   }
+
   try {
-    connection.query("DELETE FROM `question` WHERE id = ?", [qID]);
-    connection.end;
-    res.send({ message: "Successfull" });
-  } catch (error) {
-    return next(myError(error.message, 400));
+    // Attempt to delete the question from the database
+    await connection.query("DELETE FROM `question` WHERE id = ?", [qID]);
+    await connection.end();  // Properly close the connection
+
+    // Try to delete the file after successful database operation
+    try {
+      fs.unlinkSync(pdfPath);  // Synchronously delete the file
+      console.log(`File deleted successfully: ${pdfPath}`);
+      res.status(200).send({ message: "Deletion successful" });  // Send success response
+    } catch (fileError) {
+      console.error(`Error deleting file at ${pdfPath}:`, fileError.message);
+      // File deletion failed, but the question was removed; send a response indicating partial success
+      res.status(500).send({ message: "Question deleted but file deletion failed" });
+    }
+  } catch (dbError) {
+    console.error("Database Query Error:", dbError.message);
+    return next(new myError("Failed to delete question", 400));
   }
-}
+};
 
 module.exports = {
   postQuestion,
