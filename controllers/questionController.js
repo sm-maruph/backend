@@ -55,7 +55,7 @@ const getPdf = async (req, res, next) => {
   }
 
   try {
-    const [rows] = await connection.query("SELECT * FROM question");
+    const [rows] = await connection.query("SELECT q.*, u.profile_picture FROM question q JOIN user u ON q.uid = u.id");
     connection.end();
 
     return res.status(200).json(rows);
@@ -65,11 +65,11 @@ const getPdf = async (req, res, next) => {
 };
 
 const getFilteredQuestions = async (req, res, next) => {
-  const { department, examType, trimester, year } = req.body;
+  const { department, examType, trimester, year, search } = req.body;
   let connection;
 
   // Initialize query components
-  let baseQuery = "SELECT * FROM question WHERE ";
+  let baseQuery = "SELECT q.*, u.profile_picture FROM question q JOIN user u ON q.uid = u.id WHERE ";
   let conditions = [];
   let queryParams = [];
 
@@ -92,6 +92,12 @@ const getFilteredQuestions = async (req, res, next) => {
   if (year && year.length > 0) {
     conditions.push(`year IN (${year.map(() => "?").join(", ")})`);
     queryParams.push(...year);
+  }
+
+  // Add search conditions
+  if (search) {
+    conditions.push("(course_name LIKE ? OR course_code LIKE ?)");
+    queryParams.push(`%${search}%`, `%${search}%`);
   }
 
   // If no conditions are added, return all rows
@@ -125,10 +131,9 @@ const getFilteredQuestions = async (req, res, next) => {
   }
 };
 
-const getSearchQuestion = async (req, res, next) => {
-  const { search } = req.body; // Assuming search input is sent in the request body
+const deleteQuestion = async (req, res, next) => {
+  const qID = req.params.qID;
   let connection;
-
   try {
     connection = await mysql.createConnection({
       host: "localhost",
@@ -136,27 +141,20 @@ const getSearchQuestion = async (req, res, next) => {
       database: "project",
     });
   } catch (err) {
-    console.error("Database Connection Error:", err.message);
-    return next(new myError("XAMPP Server Error", 500));
+    return next(new myError("Xammp Server Error", 500));
   }
-
   try {
-    const searchTerm = `%${search}%`;
-    const query = `SELECT * FROM question WHERE course_name LIKE ? OR course_code LIKE ?`;
-
-    const [rows] = await connection.query(query, [searchTerm, searchTerm]);
-    connection.end();
-
-    res.status(200).json(rows);
-  } catch (err) {
-    console.error("Database Query Failed:", err.message);
-    return next(new myError("Database Query Failed", 500));
+    connection.query("DELETE FROM `question` WHERE id = ?", [qID]);
+    connection.end;
+    res.send({ message: "Successfull" });
+  } catch (error) {
+    return next(myError(error.message, 400));
   }
-};
+}
 
 module.exports = {
   postQuestion,
   getPdf,
   getFilteredQuestions,
-  getSearchQuestion,
+  deleteQuestion,
 };
