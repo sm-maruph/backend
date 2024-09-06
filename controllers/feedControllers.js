@@ -107,7 +107,11 @@ JOIN user as u ON sfp.uid = u.id order by created_at DESC;`
     );
     connection.end();
     const updated = results.map((item) => {
-      return { ...item, image_url: JSON.parse(item.image_url) };
+      return {
+        ...item,
+        image_url: JSON.parse(item.image_url),
+        created_at: moment(item.created_at).format("MMMM D, YYYY"),
+      };
     });
 
     console.log(updated);
@@ -209,7 +213,7 @@ const getComments = async (req, res, next) => {
       database: "project",
     });
     let [comments, field] = await connection.query(
-      "SELECT * FROM `student_feed_post_comments` as s JOIN user as u on u.id = s.uid WHERE pid = ?",
+      "SELECT *,s.id as commentId FROM `student_feed_post_comments` as s JOIN user as u on u.id = s.uid WHERE pid = ?",
       [postId]
     );
     connection.end();
@@ -250,7 +254,8 @@ const commentLikes = async (req, res, next) => {
     connection.end();
     return res.status(200).send({ message: "Mission Successful.." });
   } catch (error) {
-    return next(new myError(error.message, 500));
+    console.log(error.message);
+    return next(new myError(error.message, 400));
   }
 };
 
@@ -351,7 +356,8 @@ const editPost = async (req, res, next) => {
 
 const updatePost = async (req, res, next) => {
   const { postId } = req.params;
-  const { title, content, image_url } = req.body;
+
+  const { title, description } = req.body;
 
   let connection;
 
@@ -365,16 +371,25 @@ const updatePost = async (req, res, next) => {
     return next(new myError("Xammp Server Error", 500));
   }
   try {
+    // const [results];
+    // if (image_url) {
+    //   const [results] = await connection.query(
+    //     "UPDATE student_feed_post SET content = ?, image_url =?, updated_at = CURRENT_TIMESTAMP,title =? WHERE id = ? ",
+    //     [content, image_url, title, postId]
+    //   );
+    // } else {
     const [results] = await connection.query(
-      "UPDATE student_feed_post SET content = ?, image_url =?, updated_at = CURRENT_TIMESTAMP,title =? WHERE id = ? ",
-      [content, image_url, title, postId]
+      "UPDATE student_feed_post SET content = ?, updated_at = CURRENT_TIMESTAMP,title =? WHERE id = ? ",
+      [description, title, postId]
     );
+    // }
 
     connection.end;
     console.log(results);
     res.status(200).json({ message: "Update Successfull" });
   } catch (error) {
     connection.end;
+    console.log(error.message);
     return next(new myError(error.message, 400));
   }
 };
