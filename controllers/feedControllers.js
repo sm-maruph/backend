@@ -47,6 +47,28 @@ const feedPost = async (req, res, next) => {
   res.status(200).send({ message: "Post successfull" });
 };
 
+const getUsers = async (req, res, next) => {
+  const userId = req.user.id;
+  let connection;
+  try {
+    connection = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      database: "project",
+    });
+  } catch (err) {
+    return next(new myError("Xammp Server Error", 500));
+  }
+  try {
+    let [results] = await connection.query(`SELECT * FROM user WHERE 1`);
+    connection.end();
+    const updated = results.filter((item) => item.id !== userId);
+    return res.json({ users: updated }).status(200);
+  } catch (error) {
+    return next(new myError(error.message, 500));
+  }
+};
+
 const feedComment = async (req, res, next) => {
   const postId = req.params.postId;
   const userId = req.user.id;
@@ -114,9 +136,82 @@ JOIN user as u ON sfp.uid = u.id order by created_at DESC;`
       };
     });
 
-    console.log(updated);
     return res.json({ posts: updated }).status(200);
   } catch (error) {
+    return next(new myError(error.message, 500));
+  }
+};
+const getPostsByUser = async (req, res, next) => {
+  const userId = req.user.id;
+  console.log(userId);
+  let connection;
+  try {
+    connection = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      database: "project",
+    });
+  } catch (err) {
+    return next(new myError("Xammp Server Error", 500));
+  }
+
+  try {
+    let [results, field] = await connection.query(
+      `SELECT 
+    sfp.id,
+    sfp.uid,
+    sfp.content,
+    sfp.image_url,
+    sfp.created_at,
+    sfp.title,
+    u.profile_picture,
+    u.first_name,
+    u.last_name
+FROM student_feed_post AS sfp
+JOIN user AS u ON sfp.uid = u.id
+WHERE sfp.uid = ?  -- Use parameterized queries for safety
+ORDER BY sfp.created_at DESC;`,
+      [userId]
+    );
+    connection.end();
+    const updated = results.map((item) => {
+      return {
+        ...item,
+        image_url: JSON.parse(item.image_url),
+        created_at: moment(item.created_at).format("MMMM D, YYYY"),
+      };
+    });
+
+    return res.json({ posts: updated }).status(200);
+  } catch (error) {
+    return next(new myError(error.message, 500));
+  }
+};
+
+const voteUser = async (req, res, next) => {
+  const { voteTo, isVote } = req.body;
+  const { id: voteFrom } = req.user;
+  console.log(voteTo, isVote);
+  let connection;
+  try {
+    connection = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      database: "project",
+    });
+  } catch (err) {
+    return next(new myError("Xammp Server Error", 500));
+  }
+
+  try {
+    await connection.query(
+      "INSERT INTO student_feed_vote (vote_from, vote_to, is_voted) VALUES ( ?, ?,?) ON DUPLICATE KEY UPDATE is_voted = NOT is_voted",
+      [voteFrom, voteTo, isVote]
+    );
+    connection.end();
+    return res.status(200).send({ message: "Mission Successful.." });
+  } catch (error) {
+    console.log("error", error.message);
     return next(new myError(error.message, 500));
   }
 };
@@ -213,7 +308,7 @@ const getComments = async (req, res, next) => {
       database: "project",
     });
     let [comments, field] = await connection.query(
-      "SELECT *,s.id as commentId FROM `student_feed_post_comments` as s JOIN user as u on u.id = s.uid WHERE pid = ?",
+      "SELECT *,s.id as commentId FROM `student_feed_post_comments` as s JOIN user as u on u.id = s.uid WHERE pid = ? order by s.created_at DESC",
       [postId]
     );
     connection.end();
@@ -223,7 +318,7 @@ const getComments = async (req, res, next) => {
         created_at: moment(item.created_at).format("MMMM D, YYYY"),
       };
     });
-    console.log(comments);
+
     return res.json({ comments }).status(200);
   } catch (error) {
     console.log(error.message);
@@ -417,8 +512,143 @@ const deleteComment = async (req, res, next) => {
   }
 };
 
+const getUserInfo = async (req, res, next) => {
+  const userId = req.user.id;
+  let connection;
+  try {
+    connection = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      database: "project",
+    });
+  } catch (err) {
+    return next(new myError("Xammp Server Error", 500));
+  }
+
+  let [numOfPost] = await connection.query(
+    `SELECT COUNT(*) AS POSTS FROM student_feed_post WHERE uid = ?;`,
+    [userId]
+  );
+  let [numOfComment] = await connection.query(
+    `SELECT COUNT(*) AS COMMENTS FROM student_feed_post_comments WHERE uid = ?;`,
+    [userId]
+  );
+  let [totalVotes] = await connection.query(
+    `SELECT COUNT(*) AS VOTES FROM student_feed_vote WHERE vote_to = ? and is_voted=1`,
+    [userId]
+  );
+  let [rank] = await connection.query(
+    `SELECT  Rank FROM student_feed_rank WHERE uid = ?`,
+    [userId]
+  );
+
+  console.log(numOfPost, numOfComment, totalVotes);
+  connection.end();
+
+  res.status(200).json({
+    posts: numOfPost[0].POSTS,
+    comment: numOfComment[0].COMMENTS,
+    votes: totalVotes[0].VOTES,
+    rank: rank[0].Rank,
+  });
+};
+
+const getPostsbyKeyWord = async (req, res, next) => {
+  console.log(req.body.key);
+  const key = req.body.key;
+  try {
+    connection = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      database: "project",
+    });
+  } catch (err) {
+    return next(new myError("Xammp Server Error", 500));
+  }
+
+  try {
+    let [results, field] = await connection.query(
+      `SELECT sfp.id,sfp.uid,sfp.content,sfp.image_url,sfp.created_at,sfp.title,u.profile_picture,u.first_name,u.last_name
+FROM student_feed_post as sfp 
+JOIN user as u ON sfp.uid = u.id where sfp.title like ? order by created_at DESC;`,
+      [`%${key}%`]
+    );
+
+    connection.end();
+    const updated = results.map((item) => {
+      return {
+        ...item,
+        image_url: JSON.parse(item.image_url),
+        created_at: moment(item.created_at).format("MMMM D, YYYY"),
+      };
+    });
+
+    return res.json({ posts: updated }).status(200);
+  } catch (error) {
+    return next(new myError(error.message, 500));
+  }
+};
+const getVoteOrNote = async (req, res, next) => {
+  const userId = req.user.id;
+  const voteTo = req.params.voteTo;
+
+  let connection;
+  try {
+    connection = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      database: "project",
+    });
+  } catch (err) {
+    return next(new myError("Xammp Server Error", 500));
+  }
+  try {
+    let [results] = await connection.query(
+      `SELECT is_voted FROM student_feed_vote WHERE vote_from = ? and vote_to = ?`,
+      [userId, voteTo]
+    );
+    connection.end();
+
+    if (results.length === 0) {
+      return res.json({ isVote: 0 }).status(200);
+    }
+    return res.json({ isVote: results[0].is_voted }).status(200);
+  } catch (error) {
+    console.log(error.message);
+    return next(new myError(error.message, 500));
+  }
+};
+const getTopContributers = async (req, res, next) => {
+  let connection;
+  try {
+    connection = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      database: "project",
+    });
+  } catch (err) {
+    return next(new myError("Xammp Server Error", 500));
+  }
+  try {
+    let [results] =
+      await connection.query(`SELECT vote_to, COUNT(*) AS totalVotes,u.first_name,u.last_name,u.profile_picture 
+FROM student_feed_vote
+join user as u on vote_to=u.id
+WHERE is_Voted = 1
+GROUP BY vote_to
+ORDER BY totalVotes DESC
+LIMIT 5;`);
+    connection.end();
+
+    return res.json({ users: results }).status(200);
+  } catch (error) {
+    return next(new myError(error.message, 500));
+  }
+};
+
 module.exports = {
   feedPost,
+  getPostsByUser,
   getPosts,
   feedLikes,
   getLikes,
@@ -430,4 +660,10 @@ module.exports = {
   editPost,
   updatePost,
   deleteComment,
+  getUserInfo,
+  getPostsbyKeyWord,
+  getUsers,
+  voteUser,
+  getVoteOrNote,
+  getTopContributers,
 };

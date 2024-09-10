@@ -140,6 +140,22 @@ const signup = async (req, res, next) => {
     let [R, F] = await connection.query(
       `INSERT INTO user (id, first_name, last_name, email, password, profile_picture, gender, user_type) VALUES ('${id}','${firstName}','${lastName}','${email}','${securePassword}','${path}','${gender}', '${userType}')`
     );
+    if (userType === "student") {
+      let [a] = await connection.query(
+        "INSERT INTO `student_feed_rank`(`uid`, `Rank`) VALUES (?,?)",
+        [id, "Fresher"]
+      );
+    } else if (userType === "alumni") {
+      let [a] = await connection.query(
+        "INSERT INTO `student_feed_rank`(`uid`, `Rank`) VALUES (?,?)",
+        [id, "Alumni"]
+      );
+    } else {
+      let [a] = await connection.query(
+        "INSERT INTO `student_feed_rank`(`uid`, `Rank`) VALUES (?,?)",
+        [id, "None"]
+      );
+    }
 
     // fields contains extra meta data about results, if available
     connection.end();
