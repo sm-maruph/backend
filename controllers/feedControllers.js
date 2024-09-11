@@ -143,7 +143,7 @@ JOIN user as u ON sfp.uid = u.id order by created_at DESC;`
 };
 const getPostsByUser = async (req, res, next) => {
   const userId = req.user.id;
-  console.log(userId);
+
   let connection;
   try {
     connection = await mysql.createConnection({
@@ -442,7 +442,7 @@ const editPost = async (req, res, next) => {
     );
 
     connection.end;
-    console.log(posts);
+
     res.status(200).json({ post: posts[0] });
   } catch (error) {
     return next(new myError(error.message, 400));
@@ -542,7 +542,6 @@ const getUserInfo = async (req, res, next) => {
     [userId]
   );
 
-  console.log(numOfPost, numOfComment, totalVotes);
   connection.end();
 
   res.status(200).json({
@@ -554,7 +553,6 @@ const getUserInfo = async (req, res, next) => {
 };
 
 const getPostsbyKeyWord = async (req, res, next) => {
-  console.log(req.body.key);
   const key = req.body.key;
   try {
     connection = await mysql.createConnection({
