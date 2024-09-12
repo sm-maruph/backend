@@ -21,19 +21,16 @@ app.use("/marketplace", express.static("marketplace"));
 // Routes
 app.use("/auth", authRoute);
 
-
 //saddy
-app.use("/questionpdf", express.static("questionpdf")); // Parse URL-encoded bodies
-
+app.use("/question", express.static("question")); // Parse URL-encoded bodies
 
 //Routes
 app.use("/auth", authRoute);
 app.use("/feed", verifyToken, feedRoute);
 app.use("/marketplace", verifyToken, marketplace);
 
-
 //saddy
-app.use("/question", verifyToken, questionRoute);
+app.use("/questions", verifyToken, questionRoute);
 // Start the server
 const PORT = 3000;
 
