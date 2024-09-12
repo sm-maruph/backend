@@ -5,6 +5,7 @@ const {
   postQuestion,
   getPdf,
   deleteQuestion,
+  updateQuestion,
 } = require("../controllers/questionController");
 
 const storage = multer.diskStorage({
@@ -21,6 +22,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 router.post("/postquestion", upload.single("pdf"), postQuestion);
+router.put("/updatequestion", updateQuestion);
 router.post("/getquestion", getPdf);
 router.post("/delete", deleteQuestion);
 

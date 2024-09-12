@@ -146,8 +146,38 @@ const deleteQuestion = async (req, res, next) => {
   }
 };
 
+const updateQuestion = async (req, res, next) => {
+  const { department, courseName, courseCode, trimester, examType, year, id } =
+    req.body;
+
+  let connection;
+  try {
+    connection = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      database: "project",
+    });
+  } catch (err) {
+    console.error("Database Connection Error:", err.message); // Log connection errors
+    return next(new myError("Xammp Server Error", 500));
+  }
+
+  try {
+    const [result] = await connection.query(
+      "UPDATE question_bank SET trimester = ?,course = ?,code = ?,year = ?,department = ?,exam_type = ?WHERE id = ?;",
+      [trimester, courseName, courseCode, year, department, examType, id]
+    );
+    connection.end();
+    return res.status(200).send({ message: "Mission Successful.." });
+  } catch (error) {
+    console.error("Database Insert Error:", error.message); // Log the exact error
+    console.error("Full Error Object:", error); // Log the full error object for deeper inspection
+    return next(new myError(error.message, 500));
+  }
+};
 module.exports = {
   postQuestion,
   getPdf,
   deleteQuestion,
+  updateQuestion,
 };
