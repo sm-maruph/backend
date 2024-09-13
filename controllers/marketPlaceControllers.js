@@ -3,7 +3,12 @@ const mysql = require("mysql2/promise");
 const { myError } = require("../middlewares/errorMiddleware");
 
 const getPosts = async (req, res, next) => {
-  const { searchQuery = "", selectedCategory = "Any", minPrice = 0, maxPrice = 50000 } = req.query;
+  const {
+    searchQuery = "",
+    selectedCategory = "Any",
+    minPrice = 0,
+    maxPrice = 50000,
+  } = req.query;
   console.log(searchQuery);
 
   let connection;
@@ -56,10 +61,6 @@ const getPosts = async (req, res, next) => {
   }
 };
 
-
-
-
-
 const getMyListings = async (req, res, next) => {
   const uid = req.user.id;
   console.log(uid);
@@ -95,19 +96,19 @@ const getMyListings = async (req, res, next) => {
   }
 };
 
-
-
 const addPost = async (req, res, next) => {
   console.log("reached");
-  const { title, content, price, category } = req.body;
+  let { title, description, price, category, condition, address } = req.body;
+  category = Number(category);
   const uid = req.user.id;
   let imagesUrl;
 
-  if (req.file) {
-    imagesUrl = req.file.path;
+  if (req.files) {
+    jsonObject = req.files.map((file) => file.path);
+
+    imagesUrl = JSON.stringify(jsonObject);
   }
-  console.log(title,content,price,category,imagesUrl);
-  
+
   let connection;
   try {
     connection = await mysql.createConnection({
@@ -125,11 +126,37 @@ const addPost = async (req, res, next) => {
     let params;
 
     if (imagesUrl) {
-      query = `INSERT INTO marketplace (pid, uid, name, content, category, price, image) VALUES (?, ?, ?, ?, ?, ?, ?)`;
-      params = [id, uid, title, content, category, price, imagesUrl];
+      query = `INSERT INTO market_items (id, uid, category_id, title, description, price, item_condition, image_url, address) 
+VALUES (?, ?, ?, ?, ?, ?, ?, ?,?)
+`;
+      params = [
+        id,
+        uid,
+        category,
+        title,
+
+        description,
+        price,
+        condition,
+        imagesUrl,
+        address,
+      ];
     } else {
-      query = `INSERT INTO marketplace (pid, uid, name, content, category, price) VALUES (?, ?, ?, ?, ?, ?)`;
-      params = [id, uid, title, content, category, price];
+      query = `INSERT INTO market_items (id, uid, category_id, title, description, price, item_condition,  address) 
+      VALUES (?, ?, ?, ?, ?, ?, ?,?)
+      `;
+      params = [
+        id,
+        uid,
+
+        category,
+        title,
+        description,
+        price,
+        condition,
+        imagesUrl,
+        address,
+      ];
     }
 
     const [results, fields] = await connection.query(query, params);
@@ -141,10 +168,9 @@ const addPost = async (req, res, next) => {
   res.status(200);
 };
 
-
 const updatePost = async (req, res, next) => {
   console.log("reached");
-  const {pid, title, content, price, category } = req.body;
+  const { pid, title, content, price, category } = req.body;
   console.log(pid);
   const uid = req.user.id;
   let imagesUrl;
@@ -152,7 +178,7 @@ const updatePost = async (req, res, next) => {
   if (req.file) {
     imagesUrl = req.file.path;
   }
-  
+
   console.log(title, content, price, category);
 
   let connection;
@@ -186,14 +212,9 @@ const updatePost = async (req, res, next) => {
   }
 };
 
-
-
-
-
-
 const deletePost = async (req, res, next) => {
-  const uid = req.user.id; 
-  const pid = req.params.id; 
+  const uid = req.user.id;
+  const pid = req.params.id;
 
   let connection;
   try {
@@ -209,7 +230,7 @@ const deletePost = async (req, res, next) => {
   try {
     // Construct the query to delete the post
     const query = `DELETE FROM marketplace WHERE pid = ? AND uid = ?`;
-    
+
     // Execute the query with the post ID and user ID as parameters
     const [result] = await connection.execute(query, [pid, uid]);
 
@@ -241,7 +262,7 @@ const getContacts = async (req, res, next) => {
   }
 
   try {
-    const uid = req.params.uid;  // Assuming you're passing the user's ID as a URL parameter
+    const uid = req.params.uid; // Assuming you're passing the user's ID as a URL parameter
 
     let query = `
       SELECT id, first_name, last_name, email, profile_picture, gender, user_type 
@@ -259,17 +280,19 @@ const getContacts = async (req, res, next) => {
   }
 };
 
-
+module.exports = {
+  getPosts,
+  addPost,
+  getMyListings,
+  updatePost,
+  deletePost, // Export the deletePost function
+};
 
 module.exports = {
   getPosts,
   addPost,
   getMyListings,
   updatePost,
-  deletePost,  // Export the deletePost function
-};
-
-
-module.exports = {
-  getPosts,addPost,getMyListings,updatePost,deletePost,getContacts
+  deletePost,
+  getContacts,
 };
