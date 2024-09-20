@@ -7,8 +7,21 @@ const marketplace = require("./routes/marketplaceRoute.js");
 const { customError } = require("./middlewares/errorMiddleware.js");
 const verifyToken = require("./middlewares/authorization.js");
 const questionRoute = require("./routes/questionRoute"); // Correct path to your route file
+const chatRoutes = require("./routes/chatRoutes");
+const socketService = require("./services/socketService");
+//Chat Application
+const http = require("http"); // Required for Socket.IO to work
+const { Server } = require("socket.io");
+const { Socket } = require("dgram");
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+  },
+});
 
 // Middleware
 app.use(cors()); // Enable CORS
@@ -34,13 +47,11 @@ app.use("/questions", verifyToken, questionRoute);
 // Start the server
 const PORT = 3000;
 
-app.use(customError);
-const handleFunction = (req, res, next) => {
-  console.log(req.body);
-  console.log(req.user);
-  console.log(req.files); //req.files array
-};
+app.use("/api/chat", chatRoutes);
+socketService(io);
 
-app.listen(PORT, () => {
+app.use(customError);
+
+server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
