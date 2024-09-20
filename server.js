@@ -47,7 +47,7 @@ app.use("/questions", verifyToken, questionRoute);
 // Start the server
 const PORT = 3000;
 
-app.use("/api/chat", chatRoutes);
+app.use("/chat", verifyToken, chatRoutes);
 socketService(io);
 
 app.use(customError);
