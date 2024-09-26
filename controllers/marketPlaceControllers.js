@@ -3,13 +3,13 @@ const mysql = require("mysql2/promise");
 const { myError } = require("../middlewares/errorMiddleware");
 
 const getPosts = async (req, res, next) => {
-  const {
-    searchQuery = "",
-    selectedCategory = "Any",
-    minPrice = 0,
-    maxPrice = 50000,
-  } = req.query;
-  console.log(searchQuery);
+  // const {
+  //   searchQuery = "",
+  //   selectedCategory = "Any",
+  //   minPrice = 0,
+  //   maxPrice = 50000,
+  // } = req.query;
+  // console.log(searchQuery);
 
   let connection;
   try {
@@ -24,38 +24,32 @@ const getPosts = async (req, res, next) => {
 
   try {
     // Construct the query with filtering and sorting
-    let query = `
-      SELECT id, pid, uid, name,content, category, price, image, timestamp 
-      FROM marketplace 
-      WHERE 
-        name LIKE ? AND 
-        price BETWEEN ? AND ?
-    `;
+    let query = `SELECT * FROM market_items WHERE 1`;
 
     // If a specific category is selected, add it to the query
-    if (selectedCategory !== "Any") {
-      query += " AND category = ?";
-    }
+    // if (selectedCategory !== "Any") {
+    //   query += " AND category = ?";
+    // }
 
-    query += " ORDER BY price ASC"; // Sort by price in ascending order
+    // query += " ORDER BY price ASC"; // Sort by price in ascending order
 
-    // Prepare the query parameters
-    const params = [`${searchQuery}%`, parseInt(minPrice), parseInt(maxPrice)];
-    if (selectedCategory !== "Any") {
-      params.push(selectedCategory);
-    }
+    // // Prepare the query parameters
+    // const params = [`${searchQuery}%`, parseInt(minPrice), parseInt(maxPrice)];
+    // if (selectedCategory !== "Any") {
+    //   params.push(selectedCategory);
+    // }
 
-    console.log("Executing Query:", query, params);
+    // console.log("Executing Query:", query, params);
 
     // Execute the query with bind parameters
-    const [result] = await connection.execute(query, params);
+    const [result] = await connection.execute(query);
 
     console.log("Query Result:", result); // Log the query result
 
     connection.end();
 
     // Send a success response with the filtered and sorted data
-    res.status(200).json({ message: "Mission successful", data: result });
+    res.status(200).json(result);
   } catch (error) {
     return next(new myError(error.message, 500));
   }
@@ -97,7 +91,6 @@ const getMyListings = async (req, res, next) => {
 };
 
 const addPost = async (req, res, next) => {
-  console.log("reached");
   let { title, description, price, category, condition, address } = req.body;
   category = Number(category);
   const uid = req.user.id;
