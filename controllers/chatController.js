@@ -131,4 +131,27 @@ ORDER BY sent_at ASC;
     return next(new myError(error.message, 500));
   }
 };
-module.exports = { addToInbox, getInbox, sendMessage, getMessage };
+const getUserById = async (req, res, next) => {
+  const { id } = req.query;
+  let connection;
+  try {
+    connection = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      database: "project",
+    });
+  } catch (err) {
+    const error = new myError("Xammp Server Error", 500);
+    return next(error);
+  }
+  try {
+    const [result] = await connection.query(`SELECT * FROM USER WHERE ID = ?`, [
+      id,
+    ]);
+    res.send(result[0]);
+  } catch (error) {
+    console.log(error.message);
+    return next(new myError(error.message, 500));
+  }
+};
+module.exports = { addToInbox, getInbox, sendMessage, getMessage, getUserById };
