@@ -6,6 +6,7 @@ const { validationResult } = require("express-validator");
 const { myError } = require("../middlewares/errorMiddleware");
 
 const jwt = require("jsonwebtoken");
+
 const JWT_SECRET = "elDradoX";
 
 const login = async (req, res, next) => {
@@ -53,20 +54,28 @@ const login = async (req, res, next) => {
     const checkPass = await bcrypt.compare(password, results[0].password);
 
     if (checkPass) {
-      const token = jwt.sign(
-        {
-          id: results[0].id,
-          email: results[0].email,
-          firstName: results[0].first_name,
-          lastName: results[0].last_name,
-          profilePicture: results[0].profile_picture,
-          role: results[0].user_type,
-        },
-        JWT_SECRET,
-        { expiresIn: "1h" }
-      );
-      connection.end();
-      res.status(200).json({ token });
+      if (results[0].approved) {
+        const token = jwt.sign(
+          {
+            id: results[0].id,
+            email: results[0].email,
+            firstName: results[0].first_name,
+            lastName: results[0].last_name,
+            profilePicture: results[0].profile_picture,
+            role: results[0].user_type,
+          },
+          JWT_SECRET,
+          { expiresIn: "1h" }
+        );
+        connection.end();
+        res.status(200).json({ token });
+      } else {
+        const error = new myError(
+          "Your Account is Currently under Review,",
+          403
+        );
+        return next(error);
+      }
     } else {
       // Passwords don't match, return a 401 error
       const error = new myError(
@@ -181,6 +190,28 @@ const signup = async (req, res, next) => {
     next(err);
   }
 };
+/// get Cites and Location
+const getLocation = async (req, res, next) => {
+  let connection;
+  console.log("connected");
+  try {
+    connection = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      database: "project",
+    });
+  } catch (err) {
+    const error = new myError(err.message, 500);
+    return next(error);
+  }
 
+  try {
+    let [results] = await connection.query(`SELECT * FROM cities WHERE 1`);
+    res.json(results);
+  } catch (err) {
+    const error = new myError(err.message, 500);
+    return next(error);
+  }
+};
 
-module.exports = { login, signup };
+module.exports = { login, signup, getLocation };

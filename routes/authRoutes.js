@@ -16,8 +16,12 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-const { login, signup } = require("../controllers/authControllers");
-
+const {
+  login,
+  signup,
+  getLocation,
+} = require("../controllers/authControllers");
+router.get("/getlocation", getLocation);
 // Login Route
 router.post(
   "/login",
