@@ -94,6 +94,8 @@ const login = async (req, res, next) => {
 
 const signup = async (req, res, next) => {
   console.log(req.body);
+
+  console.log(req.file);
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     console.log(errors);
@@ -119,8 +121,27 @@ const signup = async (req, res, next) => {
     return next(error);
   }
 
-  const { firstName, lastName, email, password, gender, userType } = req.body;
-
+  const {
+    firstName,
+    lastName,
+    email,
+    password,
+    gender,
+    userType,
+    address,
+    city,
+    department,
+    number,
+    uiuId,
+  } = req.body;
+  const approved = userType === "guest" ? true : false;
+  function trimFirstZero(str) {
+    // Check if the string starts with '0' and remove it
+    if (str.length > 0 && str[0] === "0") {
+      return str.substring(1); // Return the string without the first character
+    }
+    return str; // Return the original string if it doesn't start with '0'
+  }
   let path;
   if (!req.file) {
     path = `uploads/No_Profile.jpg`;
@@ -140,14 +161,57 @@ const signup = async (req, res, next) => {
       );
       return next(error);
     }
+    let [results2] = await connection.query(
+      `SELECT * FROM USER WHERE uiu like ?`,
+      [trimFirstZero(uiuId)]
+    );
+
+    if (results2.length !== 0) {
+      const error = new myError(
+        "A user with this UIU ID  already exists in our system.",
+        409
+      );
+      return next(error);
+    }
 
     const salt = await bcrypt.genSalt(10);
     let securePassword = await bcrypt.hash(password, salt);
 
     let id = uuidv4();
 
-    let [R, F] = await connection.query(
-      `INSERT INTO user (id, first_name, last_name, email, password, profile_picture, gender, user_type) VALUES ('${id}','${firstName}','${lastName}','${email}','${securePassword}','${path}','${gender}', '${userType}')`
+    const [R, F] = await connection.query(
+      `INSERT INTO user (
+          id, 
+          first_name, 
+          last_name, 
+          email, 
+          password, 
+          profile_picture, 
+          gender, 
+          user_type, 
+          phone, 
+          address, 
+          location, 
+          department_id, 
+          approved,
+          uiu
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)`,
+      [
+        id,
+        firstName,
+        lastName,
+        email,
+        securePassword,
+        path,
+        gender,
+        userType,
+        number,
+        address,
+        city,
+        department | null, // Use null if department is undefined
+        approved,
+        uiuId | null,
+      ]
     );
     if (userType === "student") {
       let [a] = await connection.query(
@@ -180,6 +244,13 @@ const signup = async (req, res, next) => {
       JWT_SECRET,
       { expiresIn: "1h" }
     );
+    if (!approved) {
+      const error = new myError(
+        "Your Account Creation Request has been Sent, We Will Shortly notify You",
+        403
+      );
+      return next(error);
+    }
     res
       .send({
         token,
@@ -207,7 +278,10 @@ const getLocation = async (req, res, next) => {
 
   try {
     let [results] = await connection.query(`SELECT * FROM cities WHERE 1`);
-    res.json(results);
+    const cities = results.map((item) => {
+      return { id: item.id, label: item.city_name };
+    });
+    res.json(cities);
   } catch (err) {
     const error = new myError(err.message, 500);
     return next(error);
