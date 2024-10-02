@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const authRoute = require("./routes/authRoutes.js");
+const adminRoute = require("./routes/adminRoutes.js");
 const feedRoute = require("./routes/feedRoute.js");
 const marketplace = require("./routes/marketplaceRoute.js");
 const { customError } = require("./middlewares/errorMiddleware.js");
@@ -39,6 +40,7 @@ app.use("/question", express.static("question")); // Parse URL-encoded bodies
 
 //Routes
 app.use("/auth", authRoute);
+app.use("/admin", verifyToken, adminRoute);
 app.use("/feed", verifyToken, feedRoute);
 app.use("/marketplace", verifyToken, marketplace);
 
