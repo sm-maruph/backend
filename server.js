@@ -5,7 +5,7 @@ const authRoute = require("./routes/authRoutes.js");
 const adminRoute = require("./routes/adminRoutes.js");
 const feedRoute = require("./routes/feedRoute.js");
 const marketplace = require("./routes/marketplaceRoute.js");
-const myprofile = require("./routes/myprofileRoute.js");
+
 const myprofile = require("./routes/myprofileRoute.js");
 const { customError } = require("./middlewares/errorMiddleware.js");
 const verifyToken = require("./middlewares/authorization.js");
