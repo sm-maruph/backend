@@ -278,14 +278,6 @@ module.exports = {
   addPost,
   getMyListings,
   updatePost,
-  deletePost, // Export the deletePost function
-};
-
-module.exports = {
-  getPosts,
-  addPost,
-  getMyListings,
-  updatePost,
   deletePost,
   getContacts,
 };
