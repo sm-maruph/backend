@@ -11,6 +11,8 @@ const verifyToken = require("./middlewares/authorization.js");
 const questionRoute = require("./routes/questionRoute"); // Correct path to your route file
 const chatRoutes = require("./routes/chatRoutes");
 const socketService = require("./services/socketService");
+const alumniRoutes = require("./routes/alumniRoutes");
+
 //Chat Application
 const http = require("http"); // Required for Socket.IO to work
 const { Server } = require("socket.io");
@@ -34,6 +36,7 @@ app.use("/uploads", express.static("uploads"));
 app.use("/feed", express.static("feed")); // Parse URL-encoded bodies
 app.use("/marketplace", express.static("marketplace"));
 app.use("/myprofile", express.static("uploads"));
+app.use("/alumni", express.static("alumni"));
 // Routes
 app.use("/auth", authRoute);
 
@@ -49,6 +52,8 @@ app.use("/marketplace", verifyToken, marketplace);
 
 //saddy
 app.use("/questions", verifyToken, questionRoute);
+
+app.use("/alumni", verifyToken, alumniRoutes);
 // Start the server
 const PORT = 3000;
 
