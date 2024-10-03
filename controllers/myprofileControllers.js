@@ -429,6 +429,80 @@ const getUserDetails = async (req, res, next) => {
     }
   }
 };
+const editUserDetails = async (req, res, next) => {
+  const { userId } = req.query; // Get userId from request query
+  const { gender, email, phone, address, city_id } = req.body; // Data from the request body
+  let connection;
+
+  try {
+    // Establish database connection
+    connection = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      database: "project", // Replace with your database name
+    });
+
+    // Build the update query dynamically
+    let query = "UPDATE user SET ";
+    const fields = [];
+    const values = [];
+
+    // Dynamically add fields to update only if they are provided
+    if (gender !== undefined) {
+      fields.push("gender = ?");
+      values.push(gender.toLowerCase());
+    }
+    if (email !== undefined) {
+      fields.push("email = ?");
+      values.push(email);
+    }
+    if (phone !== undefined) {
+      fields.push("phone = ?");
+      values.push(phone);
+    }
+    if (address !== undefined) {
+      fields.push("address = ?");
+      values.push(address);
+    }
+    if (city_id !== undefined) {
+      fields.push("location = ?"); // Assuming location refers to city_id
+      values.push(city_id);
+    }
+
+    // If no fields to update, return an error
+    if (fields.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "No valid fields provided for update" });
+    }
+
+    // Complete the query with the fields and userId
+    query += fields.join(", ") + " WHERE id = ?";
+    values.push(userId); // Add userId to values for the WHERE clause
+
+    // Execute the update query
+    const [result] = await connection.query(query, values);
+
+    // Check if any rows were affected (if userId exists)
+    if (result.affectedRows === 0) {
+      return res
+        .status(404)
+        .json({ message: "User not found or no changes made" });
+    }
+
+    // Send success response
+    res.status(200).json({ message: "User details updated successfully" });
+  } catch (err) {
+    const error = new Error(err.message);
+    error.statusCode = 500;
+    return next(error);
+  } finally {
+    // Close the connection
+    if (connection) {
+      connection.end();
+    }
+  }
+};
 
 module.exports = {
   getUserDetails,
@@ -443,4 +517,5 @@ module.exports = {
   addUserSkill,
   getUserSkills,
   removeUserSkill,
+  editUserDetails,
 };
