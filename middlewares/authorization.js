@@ -13,9 +13,7 @@ const verifyToken = (req, res, next) => {
   jwt.verify(token, JWT_SECRET, (err, decoded) => {
     if (err) {
       console.log(err.message);
-      return next(
-        new myError("You are not authorized,Please Login or Signup.", 403)
-      );
+      return next(new myError("You are not authorized,Please Login or Signup.", 403));
     }
     req.user = decoded;
     next();

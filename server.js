@@ -5,6 +5,7 @@ const authRoute = require("./routes/authRoutes.js");
 const adminRoute = require("./routes/adminRoutes.js");
 const feedRoute = require("./routes/feedRoute.js");
 const marketplace = require("./routes/marketplaceRoute.js");
+const myprofile = require("./routes/myprofileRoute.js");
 const { customError } = require("./middlewares/errorMiddleware.js");
 const verifyToken = require("./middlewares/authorization.js");
 const questionRoute = require("./routes/questionRoute"); // Correct path to your route file
@@ -32,6 +33,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use("/uploads", express.static("uploads"));
 app.use("/feed", express.static("feed")); // Parse URL-encoded bodies
 app.use("/marketplace", express.static("marketplace"));
+app.use("/myprofile", express.static("uploads"));
 // Routes
 app.use("/auth", authRoute);
 
@@ -40,6 +42,7 @@ app.use("/question", express.static("question")); // Parse URL-encoded bodies
 
 //Routes
 app.use("/auth", authRoute);
+app.use("/myprofile", myprofile);
 app.use("/admin", verifyToken, adminRoute);
 app.use("/feed", verifyToken, feedRoute);
 app.use("/marketplace", verifyToken, marketplace);

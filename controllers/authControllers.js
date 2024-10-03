@@ -93,9 +93,9 @@ const login = async (req, res, next) => {
 /////Sign up Functionn...
 
 const signup = async (req, res, next) => {
-  console.log(req.body);
+ 
 
-  console.log(req.file);
+ 
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     console.log(errors);
