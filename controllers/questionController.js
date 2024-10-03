@@ -59,7 +59,8 @@ const getPdf = async (req, res, next) => {
   }
   const { search, department, year, trimester, examType } = req.body;
 
-  let query = "SELECT *,q.id FROM question_bank q JOIN user u ON q.uid = u.id";
+  let query =
+    "SELECT *,q.id FROM question_bank q JOIN user u ON q.uid = u.id where q.approved = 1";
   let queryParams = [];
   let conditions = [];
 
