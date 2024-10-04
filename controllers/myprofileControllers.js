@@ -431,7 +431,8 @@ const getUserDetails = async (req, res, next) => {
 };
 const editUserDetails = async (req, res, next) => {
   const { userId } = req.query; // Get userId from request query
-  const { gender, email, phone, address, city_id } = req.body; // Data from the request body
+  const { gender, email, phone, address, city_id } = req.query; // Data from the request body
+  console.log(gender, email, phone, address, city_id);
   let connection;
 
   try {
@@ -481,6 +482,7 @@ const editUserDetails = async (req, res, next) => {
     values.push(userId); // Add userId to values for the WHERE clause
 
     // Execute the update query
+    console.log(query, values);
     const [result] = await connection.query(query, values);
 
     // Check if any rows were affected (if userId exists)
@@ -503,6 +505,235 @@ const editUserDetails = async (req, res, next) => {
     }
   }
 };
+// Add Social Media Controller
+const addSocialMedia = async (req, res) => {
+  const { userId, account_type, url } = req.query;
+  console.log(req.query);
+
+  try {
+    // Create MySQL connection
+    const connection = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      database: "project", // Replace with your actual database name
+      password: "", // Add password if necessary
+    });
+
+    // Insert query
+    const query = `INSERT INTO social_media (uid, account_type, url) VALUES (?, ?, ?)`;
+    await connection.execute(query, [userId, account_type, url]);
+
+    // Close connection after query
+    await connection.end();
+
+    // Send response
+    res.status(201).json({
+      message: "Social media account added successfully!",
+    });
+  } catch (error) {
+    console.error("Error adding social media:", error);
+    res.status(500).json({
+      message: "Failed to add social media account.",
+      error: error.message,
+    });
+  }
+};
+// Delete Social Media Controller
+
+const deleteSocialMedia = async (req, res) => {
+  const { id } = req.query;
+  console.log(id, "hello");
+
+  try {
+    // Create MySQL connection
+    const connection = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      database: "project", // Replace with your actual database name
+      password: "", // Add password if required
+    });
+
+    // Delete query
+    const query = `DELETE FROM social_media WHERE id = ?`;
+    const [result] = await connection.execute(query, [id]);
+
+    // Close connection after query
+    await connection.end();
+
+    // Check if a row was affected
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        message: "No social media account found with the given ID.",
+      });
+    }
+
+    // Success response
+    res.status(200).json({
+      message: "Social media account deleted successfully!",
+    });
+  } catch (error) {
+    console.error("Error deleting social media:", error);
+    res.status(500).json({
+      message: "Failed to delete social media account.",
+      error: error.message,
+    });
+  }
+};
+
+// Get Social Media Controller
+const getSocialMedia = async (req, res) => {
+  const { userId } = req.query;
+
+  try {
+    // Establish a new connection to the MySQL database
+    const connection = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      database: "project", // Replace with your database name
+    });
+
+    try {
+      const query = `SELECT * FROM social_media WHERE uid = ?`;
+      const [rows] = await connection.execute(query, [userId]);
+
+      if (rows.length === 0) {
+        return res.status(200).json(null);
+      }
+      const result = rows.map((item) => {
+        return { type: item.account_type, url: item.url, id: item.id };
+      });
+      res.status(200).json(result);
+    } catch (queryError) {
+      console.error("Error executing query:", queryError.message);
+      res.status(500).json({
+        message: "Failed to retrieve social media accounts.",
+        error: queryError.message,
+      });
+    } finally {
+      // Close the database connection
+      await connection.end();
+    }
+  } catch (connectionError) {
+    console.error("Error establishing connection:", connectionError.message);
+    res.status(500).json({
+      message: "Failed to retrieve social media accounts.",
+      error: connectionError.message,
+    });
+  }
+};
+const addInternship = async (req, res) => {
+  const { uid, company_name, position, start, end } = req.body;
+
+  try {
+    // Create MySQL connection
+    const connection = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      database: "project", // Replace with your actual database name
+      password: "", // Add password if required
+    });
+
+    // Insert query
+    const query = `INSERT INTO internship (uid, company_name, position, start, end) VALUES (?, ?, ?, ?, ?)`;
+    await connection.execute(query, [uid, company_name, position, start, end]);
+
+    // Close connection
+    await connection.end();
+
+    // Success response
+    res.status(201).json({
+      message: "Internship added successfully!",
+    });
+  } catch (error) {
+    console.error("Error adding internship:", error);
+    res.status(500).json({
+      message: "Failed to add internship.",
+      error: error.message,
+    });
+  }
+};
+const deleteInternship = async (req, res) => {
+  const { internship_id } = req.query;
+
+  try {
+    // Create MySQL connection
+    const connection = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      database: "project", // Replace with your actual database name
+      password: "", // Add password if required
+    });
+
+    // Delete query
+    const query = `DELETE FROM internship WHERE internship_id = ?`;
+    const [result] = await connection.execute(query, [internship_id]);
+
+    // Close connection after query
+    await connection.end();
+
+    // Check if a row was affected
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        message: "No internship found with the given ID.",
+      });
+    }
+
+    // Success response
+    res.status(200).json({
+      message: "Internship deleted successfully!",
+    });
+  } catch (error) {
+    console.error("Error deleting internship:", error);
+    res.status(500).json({
+      message: "Failed to delete internship.",
+      error: error.message,
+    });
+  }
+};
+const updateInternship = async (req, res) => {
+  const { internship_id, company_name, position, start, end } = req.body;
+
+  try {
+    // Create MySQL connection
+    const connection = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      database: "project", // Replace with your actual database name
+      password: "", // Add password if required
+    });
+
+    // Update query
+    const query = `UPDATE internship SET company_name = ?, position = ?, start = ?, end = ? WHERE internship_id = ?`;
+    const [result] = await connection.execute(query, [
+      company_name,
+      position,
+      start,
+      end,
+      internship_id,
+    ]);
+
+    // Close connection after query
+    await connection.end();
+
+    // Check if a row was affected
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        message: "No internship found with the given ID.",
+      });
+    }
+
+    // Success response
+    res.status(200).json({
+      message: "Internship updated successfully!",
+    });
+  } catch (error) {
+    console.error("Error updating internship:", error);
+    res.status(500).json({
+      message: "Failed to update internship.",
+      error: error.message,
+    });
+  }
+};
 
 module.exports = {
   getUserDetails,
@@ -518,4 +749,10 @@ module.exports = {
   getUserSkills,
   removeUserSkill,
   editUserDetails,
+  addSocialMedia,
+  deleteSocialMedia,
+  getSocialMedia,
+  addInternship,
+  deleteInternship,
+  updateInternship,
 };

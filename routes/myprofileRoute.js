@@ -13,6 +13,13 @@ const {
   getUserSkills,
   removeUserSkill,
   getUserDetails,
+  editUserDetails,
+  addSocialMedia,
+  deleteSocialMedia,
+  getSocialMedia,
+  addInternship,
+  deleteInternship,
+  updateInternship,
 } = require("../controllers/myprofileControllers");
 const multer = require("multer");
 
@@ -47,4 +54,8 @@ router.post("/addskill", upload.single("none"), addUserSkill); // Route to add a
 router.get("/getskills", getUserSkills); // Route to get user skills
 router.delete("/removeskill", removeUserSkill); // Route to remove a skill
 router.get("/getUserDetails", getUserDetails);
+router.post("/editUserDetails", editUserDetails);
+router.post("/addsocial", addSocialMedia);
+router.delete("/deletesocial", deleteSocialMedia);
+router.get("/getsocial", getSocialMedia);
 module.exports = router;
