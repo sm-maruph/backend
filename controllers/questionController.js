@@ -101,8 +101,8 @@ const getPdf = async (req, res, next) => {
     connection.end();
 
     return res.status(200).json(rows);
-  } catch {
-    return next(new myError("Database Query Failed", 500));
+  } catch (err) {
+    return next(new myError(err.message, 500));
   }
 };
 

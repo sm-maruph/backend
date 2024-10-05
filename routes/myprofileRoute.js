@@ -19,7 +19,8 @@ const {
   getSocialMedia,
   addInternship,
   deleteInternship,
-  updateInternship,
+
+  getInternshipsByUser,
 } = require("../controllers/myprofileControllers");
 const multer = require("multer");
 
@@ -58,4 +59,7 @@ router.post("/editUserDetails", editUserDetails);
 router.post("/addsocial", addSocialMedia);
 router.delete("/deletesocial", deleteSocialMedia);
 router.get("/getsocial", getSocialMedia);
+router.post("/addintern", addInternship);
+router.delete("/deletintern", deleteInternship);
+router.get("/getintern", getInternshipsByUser);
 module.exports = router;

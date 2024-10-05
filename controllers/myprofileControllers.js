@@ -622,7 +622,8 @@ const getSocialMedia = async (req, res) => {
   }
 };
 const addInternship = async (req, res) => {
-  const { uid, company_name, position, start, end } = req.body;
+  const { userId, company_name, position, start, end } = req.query;
+  console.log(req.query);
 
   try {
     // Create MySQL connection
@@ -634,8 +635,14 @@ const addInternship = async (req, res) => {
     });
 
     // Insert query
-    const query = `INSERT INTO internship (uid, company_name, position, start, end) VALUES (?, ?, ?, ?, ?)`;
-    await connection.execute(query, [uid, company_name, position, start, end]);
+    const query = `INSERT INTO internships (uid, company_name, position, start, end) VALUES (?, ?, ?, ?, ?)`;
+    await connection.execute(query, [
+      userId,
+      company_name,
+      position,
+      start,
+      end,
+    ]);
 
     // Close connection
     await connection.end();
@@ -690,8 +697,8 @@ const deleteInternship = async (req, res) => {
     });
   }
 };
-const updateInternship = async (req, res) => {
-  const { internship_id, company_name, position, start, end } = req.body;
+const getInternshipsByUser = async (req, res) => {
+  const { userId } = req.query; // Assuming user_id is passed as a query parameter
 
   try {
     // Create MySQL connection
@@ -702,34 +709,28 @@ const updateInternship = async (req, res) => {
       password: "", // Add password if required
     });
 
-    // Update query
-    const query = `UPDATE internship SET company_name = ?, position = ?, start = ?, end = ? WHERE internship_id = ?`;
-    const [result] = await connection.execute(query, [
-      company_name,
-      position,
-      start,
-      end,
-      internship_id,
-    ]);
+    // Select query to fetch all internships for the user
+    const query = `SELECT internship_id, position, company_name, 
+             DATE_FORMAT(start, '%M %Y') AS start, 
+             DATE_FORMAT(end, '%M %Y') AS end 
+      FROM internships 
+      WHERE uid = ?`;
+    const [rows] = await connection.execute(query, [userId]);
 
-    // Close connection after query
+    // Close the connection after the query
     await connection.end();
 
-    // Check if a row was affected
-    if (result.affectedRows === 0) {
-      return res.status(404).json({
-        message: "No internship found with the given ID.",
-      });
+    // Check if any internships were found for the user
+    if (rows.length === 0) {
+      return res.status(200).json(null);
     }
 
-    // Success response
-    res.status(200).json({
-      message: "Internship updated successfully!",
-    });
+    // Return all internship details in the response
+    res.status(200).json(rows);
   } catch (error) {
-    console.error("Error updating internship:", error);
+    console.error("Error retrieving internships:", error);
     res.status(500).json({
-      message: "Failed to update internship.",
+      message: "Failed to retrieve internships.",
       error: error.message,
     });
   }
@@ -754,5 +755,5 @@ module.exports = {
   getSocialMedia,
   addInternship,
   deleteInternship,
-  updateInternship,
+  getInternshipsByUser,
 };
