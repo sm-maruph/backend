@@ -542,7 +542,6 @@ const addSocialMedia = async (req, res) => {
 
 const deleteSocialMedia = async (req, res) => {
   const { id } = req.query;
-  console.log(id, "hello");
 
   try {
     // Create MySQL connection

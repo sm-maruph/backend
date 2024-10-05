@@ -3,14 +3,6 @@ const mysql = require("mysql2/promise");
 const { myError } = require("../middlewares/errorMiddleware");
 
 const getPosts = async (req, res, next) => {
-  // const {
-  //   searchQuery = "",
-  //   selectedCategory = "Any",
-  //   minPrice = 0,
-  //   maxPrice = 50000,
-  // } = req.query;
-  // console.log(searchQuery);
-
   let connection;
   try {
     connection = await mysql.createConnection({
