@@ -19,8 +19,16 @@ const {
   getSocialMedia,
   addInternship,
   deleteInternship,
-
   getInternshipsByUser,
+  addJobHistory,
+  getJobHistoryByUser,
+  deleteJobHistory,
+  addDegree,
+  getDegreesByUser,
+  deleteDegree,
+  addUserClub,
+  deleteUserClub,
+  getUserClubsByUser,
 } = require("../controllers/myprofileControllers");
 const multer = require("multer");
 
@@ -62,4 +70,13 @@ router.get("/getsocial", getSocialMedia);
 router.post("/addintern", addInternship);
 router.delete("/deletintern", deleteInternship);
 router.get("/getintern", getInternshipsByUser);
+router.post("/addjobhistory", addJobHistory);
+router.delete("/deletejobhistory", deleteJobHistory);
+router.get("/getjob", getJobHistoryByUser);
+router.post("/adddegree", addDegree);
+router.delete("/deletedegree", deleteDegree);
+router.get("/userdegree", getDegreesByUser);
+router.post("/addclub", addUserClub);
+router.delete("/deleteclub", deleteUserClub);
+router.get("/getclub", getUserClubsByUser);
 module.exports = router;

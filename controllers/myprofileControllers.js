@@ -660,7 +660,7 @@ const addInternship = async (req, res) => {
   }
 };
 const deleteInternship = async (req, res) => {
-  const { internship_id } = req.query;
+  const { id } = req.query;
 
   try {
     // Create MySQL connection
@@ -672,8 +672,8 @@ const deleteInternship = async (req, res) => {
     });
 
     // Delete query
-    const query = `DELETE FROM internship WHERE internship_id = ?`;
-    const [result] = await connection.execute(query, [internship_id]);
+    const query = `DELETE FROM internships WHERE internship_id = ?`;
+    const [result] = await connection.execute(query, [id]);
 
     // Close connection after query
     await connection.end();
@@ -735,6 +735,355 @@ const getInternshipsByUser = async (req, res) => {
     });
   }
 };
+const addJobHistory = async (req, res) => {
+  const { uid, job_title, company, start_date, EndDate } = req.query;
+  console.log(req.query);
+  console.log(uid, job_title, company, start_date, EndDate);
+  console.log("history");
+  try {
+    // Create MySQL connection
+    const connection = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      database: "project", // Replace with your actual database name
+      password: "", // Add password if required
+    });
+
+    // Insert query
+    const query = `INSERT INTO job_history (uid, job_title, company, start_date, EndDate) VALUES (?, ?, ?, ?, ?)`;
+    await connection.execute(query, [
+      uid,
+      job_title,
+      company,
+      start_date,
+      EndDate,
+    ]);
+
+    // Close connection
+    await connection.end();
+
+    // Success response
+    res.status(201).json({
+      message: "Job history added successfully!",
+    });
+  } catch (error) {
+    console.error("Error adding job history:", error);
+    res.status(500).json({
+      message: "Failed to add job history.",
+      error: error.message,
+    });
+  }
+};
+const deleteJobHistory = async (req, res) => {
+  const { id: history_id } = req.query;
+  console.log(history_id);
+
+  try {
+    // Create MySQL connection
+    const connection = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      database: "project", // Replace with your actual database name
+      password: "", // Add password if required
+    });
+
+    // Delete query
+    const query = `DELETE FROM job_history WHERE history_id = ?`;
+    const [result] = await connection.execute(query, [history_id]);
+
+    // Close connection after query
+    await connection.end();
+
+    // Check if a row was affected
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        message: "No job history found with the given ID.",
+      });
+    }
+
+    // Success response
+    res.status(200).json({
+      message: "Job history deleted successfully!",
+    });
+  } catch (error) {
+    console.error("Error deleting job history:", error.message);
+    res.status(500).json({
+      message: "Failed to delete job history.",
+      error: error.message,
+    });
+  }
+};
+const getJobHistoryByUser = async (req, res) => {
+  const { userId: uid } = req.query; // Assuming uid is passed as a query parameter
+
+  try {
+    // Create MySQL connection
+    const connection = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      database: "project", // Replace with your actual database name
+      password: "", // Add password if required
+    });
+
+    // Select query to fetch all job histories for the user
+    const query = `SELECT history_id, job_title, company, 
+                   DATE_FORMAT(start_date, '%M %Y') AS start_date, 
+                   DATE_FORMAT(EndDate, '%M %Y') AS EndDate 
+                   FROM job_history 
+                   WHERE uid = ?`;
+    const [rows] = await connection.execute(query, [uid]);
+
+    // Close the connection after the query
+    await connection.end();
+
+    // Check if any job histories were found for the user
+    if (rows.length === 0) {
+      return res.status(200).json(null);
+    }
+
+    // Return all job history details in the response
+    res.status(200).json(rows);
+  } catch (error) {
+    console.error("Error retrieving job history:", error);
+    res.status(500).json({
+      message: "Failed to retrieve job history.",
+      error: error.message,
+    });
+  }
+};
+
+const addDegree = async (req, res) => {
+  const {
+    userId: uid,
+    degree_name,
+    Institution,
+    EndDate,
+    DegreeType,
+  } = req.query;
+  console.log(req.query);
+
+  try {
+    // Create MySQL connection
+    const connection = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      database: "project", // Replace with your actual database name
+      password: "", // Add password if required
+    });
+
+    // Insert query
+    const query = `INSERT INTO degrees (uid, degree_name, Institution, EndDate, DegreeType) 
+                   VALUES (?, ?, ?, ?, ?)`;
+    await connection.execute(query, [
+      uid,
+      degree_name,
+      Institution,
+      EndDate,
+      DegreeType,
+    ]);
+
+    // Close connection
+    await connection.end();
+
+    // Success response
+    res.status(201).json({
+      message: "Degree added successfully!",
+    });
+  } catch (error) {
+    console.error("Error adding degree:", error);
+    res.status(500).json({
+      message: "Failed to add degree.",
+      error: error.message,
+    });
+  }
+};
+const deleteDegree = async (req, res) => {
+  const { id: degree_id } = req.query;
+
+  try {
+    // Create MySQL connection
+    const connection = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      database: "project", // Replace with your actual database name
+      password: "", // Add password if required
+    });
+
+    // Delete query
+    const query = `DELETE FROM degrees WHERE degree_id = ?`;
+    const [result] = await connection.execute(query, [degree_id]);
+
+    // Close connection after query
+    await connection.end();
+
+    // Check if a row was affected
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        message: "No degree found with the given ID.",
+      });
+    }
+
+    // Success response
+    res.status(200).json({
+      message: "Degree deleted successfully!",
+    });
+  } catch (error) {
+    console.error("Error deleting degree:", error);
+    res.status(500).json({
+      message: "Failed to delete degree.",
+      error: error.message,
+    });
+  }
+};
+const getDegreesByUser = async (req, res) => {
+  const { userId: uid } = req.query; // Assuming uid is passed as a query parameter
+
+  try {
+    // Create MySQL connection
+    const connection = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      database: "project", // Replace with your actual database name
+      password: "", // Add password if required
+    });
+
+    // Select query to fetch all degrees for the user
+    const query = `SELECT degree_id, degree_name, Institution, 
+                   DATE_FORMAT(EndDate, '%M %Y') AS EndDate, 
+                   DegreeType 
+                   FROM degrees 
+                   WHERE uid = ?`;
+    const [rows] = await connection.execute(query, [uid]);
+
+    // Close the connection after the query
+    await connection.end();
+
+    // Check if any degrees were found for the user
+    if (rows.length === 0) {
+      return res.status(200).json(null);
+    }
+
+    // Return all degree details in the response
+    res.status(200).json(rows);
+  } catch (error) {
+    console.error("Error retrieving degrees:", error);
+    res.status(500).json({
+      message: "Failed to retrieve degrees.",
+      error: error.message,
+    });
+  }
+};
+
+const addUserClub = async (req, res) => {
+  const { uid, club_id, position_id } = req.query;
+  console.log(req.query);
+
+  try {
+    // Create MySQL connection
+    const connection = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      database: "project", // Replace with your actual database name
+      password: "", // Add password if required
+    });
+
+    // Insert query
+    const query = `INSERT INTO user_club (uid, club_id, position_id) VALUES (?, ?, ?)`;
+    await connection.execute(query, [uid, club_id, position_id]);
+
+    // Close connection
+    await connection.end();
+
+    // Success response
+    res.status(201).json({
+      message: "User-Club relationship added successfully!",
+    });
+  } catch (error) {
+    console.error("Error adding user-club relationship:", error);
+    res.status(500).json({
+      message: "Failed to add user-club relationship.",
+      error: error.message,
+    });
+  }
+};
+const deleteUserClub = async (req, res) => {
+  const { id } = req.query;
+
+  try {
+    // Create MySQL connection
+    const connection = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      database: "project", // Replace with your actual database name
+      password: "", // Add password if required
+    });
+
+    // Delete query
+    const query = `DELETE FROM user_club WHERE id = ?`;
+    const [result] = await connection.execute(query, [id]);
+
+    // Close connection after query
+    await connection.end();
+
+    // Check if a row was affected
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        message: "No user-club relationship found with the given ID.",
+      });
+    }
+
+    // Success response
+    res.status(200).json({
+      message: "User-Club relationship deleted successfully!",
+    });
+  } catch (error) {
+    console.error("Error deleting user-club relationship:", error);
+    res.status(500).json({
+      message: "Failed to delete user-club relationship.",
+      error: error.message,
+    });
+  }
+};
+const getUserClubsByUser = async (req, res) => {
+  const { userId: uid } = req.query; // Assuming uid is passed as a query parameter
+
+  try {
+    // Create MySQL connection
+    const connection = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      database: "project", // Replace with your actual database name
+      password: "", // Add password if required
+    });
+
+    // Select query to fetch user clubs along with club and position details
+    const query = `
+      SELECT uc.id, c.club_name, p.position_name 
+      FROM user_club uc
+      JOIN clubs c ON uc.club_id = c.id
+      JOIN clubpositions p ON uc.position_id = p.id
+      WHERE uc.uid = ?`;
+
+    const [rows] = await connection.execute(query, [uid]);
+
+    // Close the connection after the query
+    await connection.end();
+
+    // Check if any user-club relationships were found for the user
+    if (rows.length === 0) {
+      return res.status(200).json(null);
+    }
+
+    // Return all user-club relationships with club and position details in the response
+    res.status(200).json(rows);
+  } catch (error) {
+    console.error("Error retrieving user-club relationships:", error);
+    res.status(500).json({
+      message: "Failed to retrieve user-club relationships.",
+      error: error.message,
+    });
+  }
+};
 
 module.exports = {
   getUserDetails,
@@ -756,4 +1105,13 @@ module.exports = {
   addInternship,
   deleteInternship,
   getInternshipsByUser,
+  addJobHistory,
+  deleteJobHistory,
+  getJobHistoryByUser,
+  addDegree,
+  deleteDegree,
+  getDegreesByUser,
+  addUserClub,
+  deleteUserClub,
+  getUserClubsByUser,
 };
