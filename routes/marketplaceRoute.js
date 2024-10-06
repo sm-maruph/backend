@@ -1,12 +1,12 @@
 const express = require("express");
 const router = express.Router();
 const {
-  getPosts,
+  getMarketItems,
   addPost,
-  getMyListings,
+  getProductInfo,
+  updatePostStatusToSold,
   updatePost,
   deletePost,
-  getContacts,
 } = require("../controllers/marketPlaceControllers");
 const multer = require("multer");
 
@@ -23,11 +23,11 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-router.get("/getposts", getPosts);
+router.get("/getmarketitem", getMarketItems);
 router.post("/addpost", upload.array("files", 10), addPost);
-router.get("/getmylistings", getMyListings);
+router.get("/getproductinfo", getProductInfo);
 router.put("/updatepost", upload.single("image"), updatePost);
-router.delete("/deletepost/:id", deletePost);
-router.get("/getcontacts/:uid", getContacts);
+router.delete("/deletepost", deletePost);
+router.put("/updatetosold", updatePostStatusToSold);
 
 module.exports = router;
