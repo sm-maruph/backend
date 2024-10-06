@@ -5,7 +5,7 @@ const authRoute = require("./routes/authRoutes.js");
 const adminRoute = require("./routes/adminRoutes.js");
 const feedRoute = require("./routes/feedRoute.js");
 const marketplace = require("./routes/marketplaceRoute.js");
-
+const toletRoute = require("./routes/toletRoute.js");
 const myprofile = require("./routes/myprofileRoute.js");
 const { customError } = require("./middlewares/errorMiddleware.js");
 const verifyToken = require("./middlewares/authorization.js");
@@ -41,7 +41,7 @@ app.use("/auth", authRoute);
 
 //saddy
 app.use("/question", express.static("question")); // Parse URL-encoded bodies
-
+app.use("/tolet", express.static("tolet")); // Parse URL-encoded bodies
 //Routes
 app.use("/auth", authRoute);
 app.use("/myprofile", myprofile);
@@ -51,7 +51,7 @@ app.use("/marketplace", marketplace);
 
 //saddy
 app.use("/questions", verifyToken, questionRoute);
-
+app.use("/tolet", verifyToken, toletRoute);
 app.use("/alumni", verifyToken, alumniRoutes);
 // Start the server
 const PORT = 3000;
