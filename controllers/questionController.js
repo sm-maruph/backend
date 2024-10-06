@@ -57,52 +57,60 @@ const getPdf = async (req, res, next) => {
   } catch (err) {
     return next(new myError("Database connection error", 500));
   }
+
   const { search, department, year, trimester, examType } = req.body;
 
   let query =
-    "SELECT *,q.id FROM question_bank q JOIN user u ON q.uid = u.id where q.approved = 1";
+    "SELECT *, q.id FROM question_bank q JOIN user u ON q.uid = u.id WHERE q.approved = 1";
   let queryParams = [];
   let conditions = [];
 
+  // Search condition
   if (search) {
     conditions.push("q.course LIKE ?");
     queryParams.push(`%${search}%`);
   }
-  if (department.length > 0) {
-    conditions.push("q.department IN (?)");
-    queryParams.push(department);
+
+  // Department condition
+  if (Array.isArray(department) && department.length > 0) {
+    conditions.push(`q.department IN (${department.map(() => "?").join(",")})`);
+    queryParams.push(...department); // Spread operator to push multiple values
   }
 
   // Year condition
-  if (year.length > 0) {
-    conditions.push("q.year IN (?)");
-    queryParams.push(year);
+  if (Array.isArray(year) && year.length > 0) {
+    conditions.push(`q.year IN (${year.map(() => "?").join(",")})`);
+    queryParams.push(...year); // Spread operator to push multiple values
   }
 
   // Trimester condition
-  if (trimester.length > 0) {
-    conditions.push("q.trimester IN (?)");
-    queryParams.push(trimester);
+  if (Array.isArray(trimester) && trimester.length > 0) {
+    conditions.push(`q.trimester IN (${trimester.map(() => "?").join(",")})`);
+    queryParams.push(...trimester); // Spread operator to push multiple values
   }
 
   // ExamType condition
-  if (examType.length > 0) {
-    conditions.push("q.exam_type IN (?)");
-    queryParams.push(examType);
+  if (Array.isArray(examType) && examType.length > 0) {
+    conditions.push(`q.exam_type IN (${examType.map(() => "?").join(",")})`);
+    queryParams.push(...examType); // Spread operator to push multiple values
   }
 
+  // Combine conditions
   if (conditions.length > 0) {
-    query += " WHERE " + conditions.join(" AND ");
+    query += " AND " + conditions.join(" AND ");
   }
 
-  console.log(query, queryParams);
   try {
     const [rows] = await connection.query(query, queryParams);
     connection.end();
 
+    if (rows.length === 0) {
+      return res.status(200).json(null);
+    }
     return res.status(200).json(rows);
-  } catch {
-    return next(new myError("Database Query Failed", 500));
+  } catch (err) {
+    console.log(err.message);
+    return next(new myError(err.message, 500));
   }
 };
 
@@ -165,7 +173,7 @@ const updateQuestion = async (req, res, next) => {
 
   try {
     const [result] = await connection.query(
-      "UPDATE question_bank SET trimester = ?,course = ?,code = ?,year = ?,department = ?,exam_type = ?WHERE id = ?;",
+      "UPDATE question_bank SET trimester = ?,course = ?,code = ?,year = ?,department = ?,exam_type = ? WHERE id = ?;",
       [trimester, courseName, courseCode, year, department, examType, id]
     );
     connection.end();
