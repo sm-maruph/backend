@@ -47,7 +47,7 @@ app.use("/auth", authRoute);
 app.use("/myprofile", myprofile);
 app.use("/admin", verifyToken, adminRoute);
 app.use("/feed", verifyToken, feedRoute);
-app.use("/marketplace", verifyToken, marketplace);
+app.use("/marketplace", marketplace);
 
 //saddy
 app.use("/questions", verifyToken, questionRoute);

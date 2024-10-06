@@ -2,48 +2,132 @@ const { v4: uuidv4 } = require("uuid");
 const mysql = require("mysql2/promise");
 const { myError } = require("../middlewares/errorMiddleware");
 
-const getPosts = async (req, res, next) => {
-  let connection;
+// Controller to get filtered market items
+const getMarketItems = async (req, res) => {
   try {
-    connection = await mysql.createConnection({
+    // Destructure the query parameters
+    const { title, category_id, min_price, max_price } = req.query;
+
+    // Create MySQL connection
+    const connection = await mysql.createConnection({
       host: "localhost",
       user: "root",
-      database: "project",
+      database: "project", // Replace with your actual database name
+      password: "", // Add password if required
     });
+
+    // Initialize the base query
+    let query = 'SELECT * FROM market_items WHERE status = "available"';
+    let queryParams = [];
+
+    // Check for filters and build the query dynamically
+    if (title) {
+      query += " AND title LIKE ?";
+      queryParams.push(`%${title}%`);
+    }
+
+    if (category_id) {
+      query += " AND category_id = ?";
+      queryParams.push(category_id);
+    }
+
+    if (min_price && max_price) {
+      query += " AND price BETWEEN ? AND ?";
+      queryParams.push(min_price, max_price);
+    } else if (min_price) {
+      query += " AND price >= ?";
+      queryParams.push(min_price);
+    } else if (max_price) {
+      query += " AND price <= ?";
+      queryParams.push(max_price);
+    }
+
+    // Execute the query
+    const [rows] = await connection.execute(query, queryParams);
+
+    // Format the image_url field (which is stored as a JSON string)
+    const formattedRows = rows.map((item) => {
+      item.image_url = JSON.parse(item.image_url); // Parse the image URLs from JSON string
+      return item;
+    });
+
+    // Close connection after query execution
+    await connection.end();
+
+    // Send the result as response
+    res.json(formattedRows);
   } catch (error) {
-    return next(new myError("XAMPP Error: Failed to connect to database", 500));
+    console.error("Error fetching market items:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
   }
+};
 
+// Controller to get individual product information
+const getProductInfo = async (req, res) => {
   try {
-    // Construct the query with filtering and sorting
-    let query = `SELECT * FROM market_items WHERE 1`;
+    // Get the product ID from the request parameters
+    const { id } = req.query;
 
-    // If a specific category is selected, add it to the query
-    // if (selectedCategory !== "Any") {
-    //   query += " AND category = ?";
-    // }
+    // Create MySQL connection
+    const connection = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      database: "project", // Replace with your actual database name
+      password: "", // Add password if required
+    });
 
-    // query += " ORDER BY price ASC"; // Sort by price in ascending order
+    // SQL query to join market_items and market_categories and get individual product info
+    const query = `
+      SELECT mi.*, u.first_name as first_name,u.last_name as last_name,u.profile_picture , mc.category_name
+      FROM market_items as mi 
+      JOIN user as u
+      JOIN market_categories as mc ON mi.category_id = mc.category_id
+      WHERE mi.id = ?
+    `;
 
-    // // Prepare the query parameters
-    // const params = [`${searchQuery}%`, parseInt(minPrice), parseInt(maxPrice)];
-    // if (selectedCategory !== "Any") {
-    //   params.push(selectedCategory);
-    // }
+    // Execute the query with the product ID
+    const [rows] = await connection.execute(query, [id]);
 
-    // console.log("Executing Query:", query, params);
+    // Close connection after query execution
+    await connection.end();
 
-    // Execute the query with bind parameters
-    const [result] = await connection.execute(query);
+    // Check if the product exists
+    if (rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found or inactive.",
+      });
+    }
 
-    console.log("Query Result:", result); // Log the query result
+    // Format the image_url field (which is stored as a JSON string)
+    const product = rows[0];
+    product.image_url = JSON.parse(product.image_url); // Parse the image URLs from JSON string
 
-    connection.end();
+    // Format the created_at date
+    const options = {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+      hour12: true,
+    };
 
-    // Send a success response with the filtered and sorted data
-    res.status(200).json(result);
+    product.created_at = new Intl.DateTimeFormat("en-US", options).format(
+      new Date(product.created_at)
+    );
+
+    // Send the product data as response
+    res.json(product);
   } catch (error) {
-    return next(new myError(error.message, 500));
+    console.error("Error fetching product info:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
   }
 };
 
@@ -76,16 +160,18 @@ const getMyListings = async (req, res, next) => {
     await connection.end();
 
     // Send a success response with the filtered and sorted data
-    res.status(200).json({ message: "Mission successful", data: result });
+    res.status(200).json(result);
   } catch (error) {
     return next(new myError(error.message, 500));
   }
 };
 
 const addPost = async (req, res, next) => {
-  let { title, description, price, category, condition, address } = req.body;
+  let { title, description, price, category, condition, address, phone } =
+    req.body;
+  const { uid } = req.query;
   category = Number(category);
-  const uid = req.user.id;
+  // const uid = req.user.id;
   let imagesUrl;
 
   if (req.files) {
@@ -111,8 +197,8 @@ const addPost = async (req, res, next) => {
     let params;
 
     if (imagesUrl) {
-      query = `INSERT INTO market_items (id, uid, category_id, title, description, price, item_condition, image_url, address) 
-VALUES (?, ?, ?, ?, ?, ?, ?, ?,?)
+      query = `INSERT INTO market_items (id, uid, category_id, title, description, price, item_condition, image_url, address,phone) 
+VALUES (?, ?, ?, ?, ?, ?, ?, ?,?,?)
 `;
       params = [
         id,
@@ -125,10 +211,11 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?,?)
         condition,
         imagesUrl,
         address,
+        phone,
       ];
     } else {
-      query = `INSERT INTO market_items (id, uid, category_id, title, description, price, item_condition,  address) 
-      VALUES (?, ?, ?, ?, ?, ?, ?,?)
+      query = `INSERT INTO market_items (id, uid, category_id, title, description, price, item_condition,  address,phone) 
+      VALUES (?, ?, ?, ?, ?, ?, ?,?,?)
       `;
       params = [
         id,
@@ -141,6 +228,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?,?)
         condition,
         imagesUrl,
         address,
+        phone,
       ];
     }
 
@@ -198,78 +286,97 @@ const updatePost = async (req, res, next) => {
 };
 
 const deletePost = async (req, res, next) => {
-  const uid = req.user.id;
-  const pid = req.params.id;
+  const { itemId: postId, uid } = req.query; // Assume postId is passed as a query parameter
+
+  console.log("Delete Post Request:", uid, postId); // Logging the request
 
   let connection;
   try {
+    // Establish the MySQL connection
     connection = await mysql.createConnection({
       host: "localhost",
       user: "root",
       database: "project",
     });
-  } catch (error) {
-    return next(new myError("XAMPP Error: Failed to connect to database", 500));
+  } catch (err) {
+    return next(new myError("XAMPP Server Error", 500));
   }
 
   try {
-    // Construct the query to delete the post
-    const query = `DELETE FROM marketplace WHERE pid = ? AND uid = ?`;
+    // Prepare the delete query
+    const query = `DELETE FROM market_items WHERE id = ? AND uid = ?`;
+    const params = [postId, uid]; // Ensure that the user can only delete their own posts
 
-    // Execute the query with the post ID and user ID as parameters
-    const [result] = await connection.execute(query, [pid, uid]);
+    // Execute the delete query
+    const [results] = await connection.query(query, params);
 
-    // Check if the post was deleted
-    if (result.affectedRows === 0) {
-      return next(new myError("Post not found or not authorized", 404));
+    if (results.affectedRows === 0) {
+      // No rows affected means the post doesn't exist or the user is not the owner
+      return res.status(404).send({
+        message:
+          "Post not found or you are not authorized to delete this post.",
+      });
     }
 
-    // Close the connection
+    // Close the connection and send a success response
     connection.end();
-
-    // Send a success response
-    res.status(200).json({ message: "Post deleted successfully" });
+    res.status(200).send({ message: "Post deleted successfully." });
   } catch (error) {
     return next(new myError(error.message, 500));
+  } finally {
+    if (connection) {
+      await connection.end(); // Ensure the connection is closed in case of an error
+    }
   }
 };
 
-const getContacts = async (req, res, next) => {
+const updatePostStatusToSold = async (req, res, next) => {
+  const { itemId: postId, uid } = req.query; // Assume postId is passed as a route parameter
+
+  console.log("update Sold", uid, postId); // Get the user ID from the authenticated request
+
   let connection;
   try {
+    // Establish the MySQL connection
     connection = await mysql.createConnection({
       host: "localhost",
       user: "root",
       database: "project",
     });
-  } catch (error) {
-    return next(new myError("XAMPP Error: Failed to connect to database", 500));
+  } catch (err) {
+    return next(new myError("XAMPP Server Error", 500));
   }
 
   try {
-    const uid = req.params.uid; // Assuming you're passing the user's ID as a URL parameter
+    // Prepare the update query
+    const query = `UPDATE market_items SET status = ? WHERE id = ? AND uid = ?`;
+    const params = ["sold", postId, uid]; // Ensure that the user can only update their own posts
 
-    let query = `
-      SELECT id, first_name, last_name, email, profile_picture, gender, user_type 
-      FROM user 
-      WHERE id = ?
-    `;
+    // Execute the update query
+    const [results] = await connection.query(query, params);
 
-    const [result] = await connection.execute(query, [uid]);
+    if (results.affectedRows === 0) {
+      // No rows affected means the post doesn't exist or the user is not the owner
+      return res.status(404).send({
+        message:
+          "Post not found or you are not authorized to update this post.",
+      });
+    }
 
-    await connection.end();
-
-    res.status(200).json({ message: "Mission successful", data: result });
+    // Close the connection and send a success response
+    connection.end();
+    res.status(200).send({ message: "Post status updated to sold." });
   } catch (error) {
     return next(new myError(error.message, 500));
   }
 };
 
 module.exports = {
-  getPosts,
+  getMarketItems,
+  getProductInfo,
   addPost,
+  updatePostStatusToSold,
   getMyListings,
   updatePost,
   deletePost,
-  getContacts,
 };
