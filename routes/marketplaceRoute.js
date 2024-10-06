@@ -5,8 +5,12 @@ const {
   addPost,
   getProductInfo,
   updatePostStatusToSold,
-  updatePost,
   deletePost,
+  getUserBookmarks,
+  addBookmark,
+  deleteBookmark,
+  getAllUserPosts,
+  updateProduct,
 } = require("../controllers/marketPlaceControllers");
 const multer = require("multer");
 
@@ -26,8 +30,9 @@ const upload = multer({ storage: storage });
 router.get("/getmarketitem", getMarketItems);
 router.post("/addpost", upload.array("files", 10), addPost);
 router.get("/getproductinfo", getProductInfo);
-router.put("/updatepost", upload.single("image"), updatePost);
 router.delete("/deletepost", deletePost);
 router.put("/updatetosold", updatePostStatusToSold);
+router.get("/getuserallpost", getAllUserPosts);
+router.put("/updateproduct", upload.array("none"), updateProduct);
 
 module.exports = router;

@@ -131,41 +131,6 @@ const getProductInfo = async (req, res) => {
   }
 };
 
-const getMyListings = async (req, res, next) => {
-  const uid = req.user.id;
-  console.log(uid);
-
-  let connection;
-  try {
-    connection = await mysql.createConnection({
-      host: "localhost",
-      user: "root",
-      database: "project",
-    });
-  } catch (error) {
-    return next(new myError("XAMPP Error: Failed to connect to database", 500));
-  }
-
-  try {
-    // Construct the query with filtering and sorting
-    let query = `
-      SELECT id,pid, uid, name, content, category, price, image, timestamp FROM marketplace
-      WHERE uid = ?
-    `;
-
-    // Execute the query with the uid as a parameter
-    const [result] = await connection.execute(query, [uid]);
-    console.log(result);
-    // Close the connection
-    await connection.end();
-
-    // Send a success response with the filtered and sorted data
-    res.status(200).json(result);
-  } catch (error) {
-    return next(new myError(error.message, 500));
-  }
-};
-
 const addPost = async (req, res, next) => {
   let { title, description, price, category, condition, address, phone } =
     req.body;
@@ -239,50 +204,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?,?,?)
     return next(new myError(error.message, 500));
   }
   res.status(200);
-};
-
-const updatePost = async (req, res, next) => {
-  console.log("reached");
-  const { pid, title, content, price, category } = req.body;
-  console.log(pid);
-  const uid = req.user.id;
-  let imagesUrl;
-
-  if (req.file) {
-    imagesUrl = req.file.path;
-  }
-
-  console.log(title, content, price, category);
-
-  let connection;
-  try {
-    connection = await mysql.createConnection({
-      host: "localhost",
-      user: "root",
-      database: "project",
-    });
-  } catch (err) {
-    return next(new myError("XAMPP Server Error", 500));
-  }
-
-  try {
-    let query;
-    let params;
-
-    if (imagesUrl) {
-      query = `UPDATE marketplace SET name = ?, content = ?, category = ?, price = ?, image = ? WHERE pid = ? AND uid = ?`;
-      params = [title, content, category, price, imagesUrl, pid, uid];
-    } else {
-      query = `UPDATE marketplace SET name = ?, content = ?, category = ?, price = ? WHERE pid = ? AND uid = ?`;
-      params = [title, content, category, price, pid, uid];
-    }
-
-    const [results, fields] = await connection.query(query, params);
-    connection.end();
-    res.status(200).send({ message: "Post updated successfully" });
-  } catch (error) {
-    return next(new myError(error.message, 500));
-  }
 };
 
 const deletePost = async (req, res, next) => {
@@ -370,13 +291,246 @@ const updatePostStatusToSold = async (req, res, next) => {
     return next(new myError(error.message, 500));
   }
 };
+const getUserBookmarks = async (req, res, next) => {
+  const uid = req.user.id; // Get the user ID from the authenticated request
 
+  let connection;
+  try {
+    // Establish MySQL connection
+    connection = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      database: "project",
+    });
+  } catch (err) {
+    return next(new myError("XAMPP Server Error", 500));
+  }
+
+  try {
+    // Query to get bookmarked posts by the user
+    const query = `
+      SELECT market_items.*
+      FROM bookmark
+      JOIN market_items
+      ON bookmark.market_id = market_items.id
+      WHERE bookmark.uid = ?
+    `;
+
+    const [results] = await connection.query(query, [uid]);
+
+    connection.end();
+
+    if (results.length === 0) {
+      return res.status(404).send({ message: "No bookmarks found." });
+    }
+
+    res.status(200).send(results);
+  } catch (error) {
+    return next(new myError(error.message, 500));
+  }
+};
+
+const addBookmark = async (req, res, next) => {
+  const { marketId } = req.body; // The ID of the post to be bookmarked
+  const uid = req.user.id; // Get the user ID from the authenticated request
+
+  let connection;
+  try {
+    // Establish MySQL connection
+    connection = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      database: "project",
+    });
+  } catch (err) {
+    return next(new myError("XAMPP Server Error", 500));
+  }
+
+  try {
+    // Check if the bookmark already exists
+    const checkQuery = `SELECT * FROM bookmark WHERE uid = ? AND market_id = ?`;
+    const [checkResult] = await connection.query(checkQuery, [uid, marketId]);
+
+    if (checkResult.length > 0) {
+      return res.status(400).send({ message: "Bookmark already exists." });
+    }
+
+    // Query to insert a new bookmark
+    const query = `INSERT INTO bookmark (id, uid, market_id) VALUES (?, ?, ?)`;
+    const bookmarkId = uuidv4(); // Generate a new UUID for the bookmark
+
+    await connection.query(query, [bookmarkId, uid, marketId]);
+
+    connection.end();
+
+    res.status(201).send({ message: "Bookmark added successfully." });
+  } catch (error) {
+    return next(new myError(error.message, 500));
+  }
+};
+const deleteBookmark = async (req, res, next) => {
+  const { marketId } = req.params; // The ID of the post to be unbookmarked
+  const uid = req.user.id; // Get the user ID from the authenticated request
+
+  let connection;
+  try {
+    // Establish MySQL connection
+    connection = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      database: "project",
+    });
+  } catch (err) {
+    return next(new myError("XAMPP Server Error", 500));
+  }
+
+  try {
+    // Query to delete the bookmark
+    const query = `DELETE FROM bookmark WHERE uid = ? AND market_id = ?`;
+    const [result] = await connection.query(query, [uid, marketId]);
+
+    connection.end();
+
+    if (result.affectedRows === 0) {
+      return res.status(404).send({ message: "Bookmark not found." });
+    }
+
+    res.status(200).send({ message: "Bookmark deleted successfully." });
+  } catch (error) {
+    return next(new myError(error.message, 500));
+  }
+};
+const getAllUserPosts = async (req, res, next) => {
+  const { id: uid } = req.query; // Assuming you're using some authentication middleware to get the logged-in user's ID
+
+  let connection;
+  try {
+    // Establishing connection to MySQL database
+    connection = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      database: "project", // Replace with your actual database name
+    });
+  } catch (err) {
+    return next(new myError("XAMPP Server Error", 500));
+  }
+
+  try {
+    // Query to get all posts for the specific user
+    const query = `
+      SELECT *
+      FROM market_items
+      WHERE uid = ?
+    `;
+
+    const [results] = await connection.execute(query, [uid]);
+    const formattedRows = results.map((item) => {
+      item.image_url = JSON.parse(item.image_url); // Parse the image URLs from JSON string
+      return item;
+    });
+
+    // Closing the connection
+    connection.end();
+
+    // If no posts found, return a message
+    if (results.length === 0) {
+      return res.status(404).json({ message: "No posts found for this user." });
+    }
+
+    // Return all the user's posts
+    res.status(200).json(formattedRows);
+  } catch (error) {
+    return next(new myError(error.message, 500));
+  }
+};
+
+const updateProduct = async (req, res, next) => {
+  const { title, description, phone, price, condition, address } = req.body; // Destructure fields from the request body
+  const { id } = req.query; // Get the product ID from the request parameters
+
+  // Validate that at least one field is provided
+  if (!title && !description && !phone && !price && !condition && !address) {
+    return res
+      .status(400)
+      .json({ message: "At least one field is required to update." });
+  }
+
+  let connection;
+  try {
+    // Establishing connection to MySQL database
+    connection = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      database: "project", // Replace with your actual database name
+    });
+
+    // Create an array to hold the fields and values for the query
+    const fields = [];
+    const values = [];
+
+    // Check which fields are provided and build the update query
+    if (title) {
+      fields.push("title = ?");
+      values.push(title);
+    }
+    if (description) {
+      fields.push("description = ?");
+      values.push(description);
+    }
+    if (phone) {
+      fields.push("phone = ?");
+      values.push(phone);
+    }
+    if (price) {
+      fields.push("price = ?");
+      values.push(price);
+    }
+    if (condition) {
+      fields.push("item_condition = ?");
+      values.push(condition);
+    }
+    if (address) {
+      fields.push("address = ?");
+      values.push(address);
+    }
+
+    // Add the ID to the end of the values array
+    values.push(id);
+
+    // Construct the query
+    const query = `
+      UPDATE market_items 
+      SET ${fields.join(", ")} 
+      WHERE id = ?
+    `;
+
+    const [result] = await connection.query(query, values); // Execute the query
+
+    // Check if the product was found and updated
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Product not found." });
+    }
+
+    // Successfully updated
+    res.status(200).json({ message: "Product updated successfully." });
+  } catch (error) {
+    console.error("Error updating product:", error);
+    return next(new myError("Internal server error.", 500)); // Handle any errors
+  } finally {
+    if (connection) {
+      await connection.end(); // Ensure the connection is closed
+    }
+  }
+};
 module.exports = {
   getMarketItems,
   getProductInfo,
   addPost,
   updatePostStatusToSold,
-  getMyListings,
-  updatePost,
   deletePost,
+  getUserBookmarks,
+  addBookmark,
+  deleteBookmark,
+  getAllUserPosts,
+  updateProduct,
 };
